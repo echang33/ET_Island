@@ -1,12 +1,16 @@
-# [Your Project Title Here]
+# ET Island (Working Title)
 
 ## Team Members
 
-List your team members here. Link to each member's individual github account.
+Ethan Chang  -- [echang33](https://example.com)
+Ryan Wu -- [wucru365](https://github.com/wucru365)
+Steven Tan -- [StevenTan123](https://github.com/StevenTan123)
 
 ## Game Summary
 
-A one- or two-paragraph description of your game. If there are important story and/or character aspects, include them here.
+In ET Island (Working Title), you play as a computer scientist named Chris Paul who is tired of losing work to artificial intelligence. The main culprit is Epsilon Tau, an AI that is currently expanding its network by building data centers on remote islands in the Pacific Ocean. Deciding enough is enough, you travel to the Pacific with a straightforward goal: infiltrate the facility, find the master killswitch, and shut Epsilon Tau down.
+
+The gameplay mixes platforming, stealth, and puzzle-solving as you navigate the island's terrain and high-tech facilities. You will use parkour to maneuver around obstacles and avoid robotic security guards patrolling the area. Along the way, you must hack into restricted areas by solving math problems and logic puzzles at security doors. Ironically, these systems are designed to keep people out, meaning you have to successfully prove that you aren't human in order to get inside and pull the plug.
 
 ## Genres
 
