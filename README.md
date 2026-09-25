@@ -2,8 +2,8 @@
 
 ## Team Members
 
-Ethan Chang  -- [echang33](https://example.com)
-Ryan Wu -- [wucru365](https://github.com/wucru365)
+Ethan Chang  -- [echang33](https://example.com)  
+Ryan Wu -- [wucru365](https://github.com/wucru365)  
 Steven Tan -- [StevenTan123](https://github.com/StevenTan123)
 
 ## Game Summary
