@@ -72,7 +72,7 @@ TODO:
 * ~~One obstacle (laser beams, deals damage to player)~~
 * One puzzle screen
 * Interaction that calls and displays the puzzle scren
-* One enemy (laser turret)
+* ~~One enemy (laser turret)~~
 
 ### Additions:
 Not applicable
@@ -86,6 +86,8 @@ Not applicable
 * Movement: We have implemented basic movement (WASD, jumping mechanics). In the future, crouching can also be implemented, but that can be for later on.
 * Obstacles: One obstacle, static laser beams, has been implemented. Implemented collider logic where touching a laser beam deals damage to players. It is currently set to deal 100% of player damage, meaning touching a laser beam will kill you. For now, "dying" just respawns you at the beginning of the level, but can be changed to respawn at a certain checkpoint later on.
 * One example level was created. It involves a hallway guarded by laser beams, leading to a larger room with enemies. 
+* One stationay enemy, a laser turret, was created. It shoots laser projectiles at the player, which also deal damage and cause the player to die. Laser damage is also adjustable in the inspector.
 
 ![Test Level](./screenshots/TestLevel.png)
 ![Death Popup](./screenshots/TestDeathScene.png)
+![Turret](./screeshots/Turret.png)
