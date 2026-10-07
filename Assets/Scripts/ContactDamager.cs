@@ -6,10 +6,14 @@ public class ContactDamager : MonoBehaviour
 {
 
     public float damage;
+    public bool destroyOnContact = false;
 
     void OnTriggerEnter(Collider other)
     {
-        // Destroy(gameObject);
+        if (destroyOnContact)
+        {
+            Destroy(gameObject);
+        }
 
         Life life = other.GetComponent<Life>();
         if (life != null)
