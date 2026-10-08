@@ -1,3 +1,7 @@
+/*
+Team members: Ethan Chang, Ryan Wu, Steven tan
+*/
+
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -21,7 +25,7 @@ public class ContactDamager : MonoBehaviour
             life.amount -= damage;
         }
     }
-    // Start is called before the first frame update
+    
     void Start()
     {
         

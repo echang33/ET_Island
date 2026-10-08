@@ -1,3 +1,7 @@
+/*
+Team members: Ethan Chang, Ryan Wu, Steven tan
+*/
+
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;

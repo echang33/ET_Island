@@ -54,8 +54,6 @@ Some rooms will have parkour aspects that will require careful maneuvering from 
     - The rooms may have moving platforms, lasers, and cameras that you must evade.
     - We plan on implementing jumping (spacebar), crouching (shift), and directional movement (WASD). 
 
-
-
 ## Development Plan
 
 ### Project Checkpoint 1-2: Basic Mechanics and Scripting (Ch 5-9)
@@ -70,8 +68,8 @@ TODO:
 * ~~Basic movement (WASD, jumping)~~
 * ~~One example room/level~~
 * ~~One obstacle (laser beams, deals damage to player)~~
-* One puzzle screen
-* Interaction that calls and displays the puzzle scren
+* ~~One puzzle screen~~
+* ~~Interaction that calls and displays the puzzle screen~~
 * ~~One enemy (laser turret)~~
 
 ### Additions:
@@ -79,15 +77,23 @@ Not applicable
 
 ### Project Checkpoint 3-4: 3D Scenes and Models (Ch 3+4, 10)
 
+For the next checkpoint, we plan on creating additional rooms and environmental assets, so that we can then use those building blocks to generate larger data center levels that combine multiple rooms, obstacles, and puzzles. We may experiment with basic procedural generation techniques (if time permits).
 
-## Development
+We also plan on smoothing out movement mechanics. Currently the player can jump even while in the air, so that will need to be fixed. Some of the movement and gravity also don't feel as smooth as we would like to, so we plan on refining those controls. 
+
+We also plan on implementing more types of puzzles. Since we already have a graph UI, this will be easy to expand. For example, we can add finding Hamiltonian paths and minimum vertex cover. We also plan to connect puzzles more directly to progression through the data center. Successfully solving puzzles will allow the player to access previously restricted areas.
+
+## Development PLan
 
 ### Project Checkpoint 1-2:
 * Movement: We have implemented basic movement (WASD, jumping mechanics). In the future, crouching can also be implemented, but that can be for later on.
 * Obstacles: One obstacle, static laser beams, has been implemented. Implemented collider logic where touching a laser beam deals damage to players. It is currently set to deal 100% of player damage, meaning touching a laser beam will kill you. For now, "dying" just respawns you at the beginning of the level, but can be changed to respawn at a certain checkpoint later on.
 * One example level was created. It involves a hallway guarded by laser beams, leading to a larger room with enemies. 
-* One stationay enemy, a laser turret, was created. It shoots laser projectiles at the player, which also deal damage and cause the player to die. Laser damage is also adjustable in the inspector.
+* One stationary enemy, a laser turret, was created. It shoots laser projectiles at the player, which also deal damage and cause the player to die. Laser damage is also adjustable in the inspector.
+* Puzzle system: We implemented a puzzle UI that appears when the player gets near a puzzle location in the 3D environment (currently it is a green cube at the end of the test level). The puzzle UI pauses the 3D gameplay, and prompts the user with a puzzle and textbox waiting for the user's answer.
+* Graph puzzle: We implemented a graph generation and display system for graph-based puzzles. Graphs are randomly generated with a configurable number of vertices and edge density and displayed in the puzzle UI. Currently the puzzle asks the user to find a maximum clique. Once the user enters their answer, it is parsed and programmatically checked. If the user enters the wrong answer, it kills the player. If the user answers correctly, they exit the puzzle screen (but nothing more happens for now).
 
-![Test Level](./screenshots/TestLevel.png)
-![Death Popup](./screenshots/TestDeathScene.png)
-![Turret](./screeshots/Turret.png)
+![Test Level](./Screenshots/TestLevel.png)
+![Death Popup](./Screenshots/TestDeathScene.png)
+![Turret](./Screenshots/Turret.png)
+![GraphPuzzle](./Screenshots/game_clique_puzzle.png)

@@ -1,10 +1,17 @@
+/*
+Team members: Ethan Chang, Ryan Wu, Steven tan
+*/
+
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class Graph {
+    // Number of nodes
     public int N;
+    // Adjacency matrix
     public List<List<bool>> adjMat;
+    // Size of maximum clique (stored so it doesn't have to be recomputed)
     public int maxClique;
 
     public Graph(int _N, float edgeProb) {
@@ -22,6 +29,8 @@ public class Graph {
         maxClique = MaxClique();
     }
 
+    // Generate a random graph where between any two nodes,
+    // an edge is generated with probabality edgeProb.
     public void GenRandomGraph(float edgeProb) {
         for (int i = 0; i < N; i++) {
             for (int j = i + 1; j < N; j++) {
@@ -33,11 +42,13 @@ public class Graph {
         }
     }
 
+    // Checks if a list of nodes is a clique.
     public bool CheckClique(List<int> nodes) {
         for (int i = 0; i < nodes.Count; i++) {
             for (int j = i + 1; j < nodes.Count; j++) {
                 int u = nodes[i];
                 int v = nodes[j];
+                // If any two nodes are not connected, not a clique
                 if (!adjMat[u][v]) {
                     return false;
                 }
