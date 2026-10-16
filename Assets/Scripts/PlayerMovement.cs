@@ -21,6 +21,7 @@ public class PlayerMovement : MonoBehaviour {
     private Vector2 lookValue; 
     private float xRotation = 0f; 
     [SerializeField] private float gravityMultiplier = 2f;
+    private readonly RaycastHit[] groundHits = new RaycastHit[16];
 
     private void Awake() {
         rb = GetComponent<Rigidbody>();
@@ -38,16 +39,26 @@ public class PlayerMovement : MonoBehaviour {
     }
 
     private bool IsGrounded() {
-        // Casts a ray (half the height of the capsule from the center) downwards
-        // to check if the player is grounded.
-        float halfHeight = capsule.height / 2 + 0.5f;
-        return Physics.Raycast(transform.position, Vector3.down, halfHeight);
+        Bounds bounds = capsule.bounds;
+        float radius = Mathf.Min(bounds.extents.x, bounds.extents.z) * 0.9f;
+        const float groundTolerance = 0.1f;
+        Vector3 origin = bounds.center;
+        float distance = bounds.extents.y - radius + groundTolerance;
+        int hitCount = Physics.SphereCastNonAlloc(origin, radius, Vector3.down,
+            groundHits, distance, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
+
+        for (int i = 0; i < hitCount; i++) {
+            RaycastHit hit = groundHits[i];
+            if (hit.collider.attachedRigidbody != rb && hit.normal.y >= 0.5f) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public void OnJump(InputValue value) {
-        // TODO: Only jump if player is grounded. Tried using the IsGrounded() check above
-        // but was kind of jank, so reverting for now.
-        if (value.isPressed) {
+        if (value.isPressed && rb.velocity.y <= 0.1f && IsGrounded()) {
             rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
         }
     }
