@@ -2,8 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class TurretShoot : MonoBehaviour
-{
+public class TurretShoot : MonoBehaviour {
     public GameObject prefab;
     public GameObject shootPoint;
     
@@ -13,22 +12,19 @@ public class TurretShoot : MonoBehaviour
     // Tracks time passed since the last shot
     private float timer = 0f;
 
-    void Update()
-    {
+    void Update() {
         // Time.deltaTime is the exact time it took to draw the last frame.
         // Adding it up creates a real-world stopwatch.
         timer += Time.deltaTime;
 
         // If the stopwatch reaches your fireRate, shoot and reset the clock
-        if (timer >= fireRate)
-        {
+        if (timer >= fireRate) {
             OnFire();
             timer = 0f; 
         }
     }
 
-    public void OnFire()
-    {
+    public void OnFire() {
         GameObject clone = Instantiate(prefab, shootPoint.transform.position, shootPoint.transform.rotation);
     }
 }
