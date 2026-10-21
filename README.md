@@ -97,3 +97,10 @@ We also plan on implementing more types of puzzles. Since we already have a grap
 ![Death Popup](./Screenshots/TestDeathScene.png)
 ![Turret](./Screenshots/Turret.png)
 ![GraphPuzzle](./Screenshots/game_clique_puzzle.png)
+
+### Project Checkpoint 3-4:
+Assets used: 
+[LowPoly Server Room Props](https://assetstore.unity.com/packages/3d/environments/lowpoly-server-room-props-197268) - Datacenter interior design
+[LowPoly Sci-fi Turrets](https://assetstore.unity.com/packages/3d/props/weapons/low-poly-sci-fi-turrets-demo-333204) - Enemy AI turrets
+[Mini Simple Characters](https://assetstore.unity.com/packages/3d/characters/humanoids/mini-simple-characters-free-demo-262799) - Main character Chi-Poh Le model 
+
