@@ -232,7 +232,7 @@ MonoBehaviour:
   minHeight: 5
   minDepth: 15
   adjacencyEpsilon: 0.001
-  minFaceOverlap: 1
+  minFaceOverlap: 3
   shrinkageBorder: 0
   wallThickness: 0.2
   openingSize: {x: 2, y: 2}
@@ -1754,12 +1754,12 @@ PrefabInstance:
     - target: {fileID: 2982341718810544924, guid: 6b6c984542b35d84685623042cedec8a,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.04
+      value: -1.33
       objectReference: {fileID: 0}
     - target: {fileID: 2982341718810544924, guid: 6b6c984542b35d84685623042cedec8a,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: -6.61
+      value: -26.26
       objectReference: {fileID: 0}
     - target: {fileID: 2982341718810544924, guid: 6b6c984542b35d84685623042cedec8a,
         type: 3}

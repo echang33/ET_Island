@@ -82,11 +82,12 @@ public class BSPGenerator : MonoBehaviour {
     private Transform wallRoot;
 
     private void Awake() {
+        UnityEngine.Random.InitState(seed);
+        rng = new System.Random(seed);
         Generate();
     }
 
     public void Generate() {
-        rng = new System.Random(seed);
         SplitRecursively(new Region(boundsMin, boundsMax));
         N = leafRegions.Count;
 
@@ -342,14 +343,14 @@ public class BSPGenerator : MonoBehaviour {
             if (axis == 0) {
                 // If face is a wall (and not a ceiling / floor), align opening to be as low as possible.
                 openingMin[u] = uMin;
-                openingMin[v] = (vMin + vMax - holeV) * 0.5f;
+                openingMin[v] = UnityEngine.Random.value * (vMax - vMin - holeV) + vMin;
             } else if (axis == 2) {
                 // If face is a wall (and not a ceiling / floor), align opening to be as low as possible.
-                openingMin[u] = (uMin + uMax - holeU) * 0.5f;
-                openingMin[v] = uMin + shrinkageBorder + wallThickness * 0.5f;
+                openingMin[u] = UnityEngine.Random.value * (uMax - uMin - holeU) + uMin;
+                openingMin[v] = vMin;
             } else {
-                openingMin[u] = (uMin + uMax - holeU) * 0.5f;
-                openingMin[v] = (vMin + vMax - holeV) * 0.5f;
+                openingMin[u] = UnityEngine.Random.value * (uMax - uMin - holeU) + uMin;
+                openingMin[v] = UnityEngine.Random.value * (vMax - vMin - holeV) + vMin;
             }
             openingMax[u] = openingMin[u] + holeU;
             openingMax[v] = openingMin[v] + holeV;
