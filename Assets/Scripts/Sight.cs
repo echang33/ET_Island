@@ -9,10 +9,12 @@ public class Sight : MonoBehaviour
     public float angle;
     public LayerMask objectsLayers;
     public LayerMask obstaclesLayers;
-    public Collider detectedObject;
-    void Start()
-    {
+    // Detection is runtime state, never a target saved in the scene or prefab.
+    [System.NonSerialized] public Collider detectedObject;
 
+    void OnEnable()
+    {
+        detectedObject = null;
     }
 
     // Update is called once per frame

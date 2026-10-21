@@ -9,6 +9,8 @@ using UnityEngine.InputSystem;
 
 public class PuzzleActivator : MonoBehaviour {
     [SerializeField] private GameObject graphPuzzlePrefab;
+    [Tooltip("Turrets enraged by failure. Leave empty to affect all EnemyFSM turrets in the scene.")]
+    [SerializeField] private EnemyFSM[] turrets;
     private GameObject activePuzzle;
     private GameObject player;
     private GraphUI puzzleUI;
@@ -55,9 +57,16 @@ public class PuzzleActivator : MonoBehaviour {
     }
 
     public void FailPuzzle() {
-        // Kill player
-        Life playerLife = player.GetComponent<Life>();
-        playerLife.onDeath.Invoke();
+        EnemyFSM[] affectedTurrets = turrets;
+        if (affectedTurrets == null || affectedTurrets.Length == 0) {
+            affectedTurrets = FindObjectsByType<EnemyFSM>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        }
+
+        foreach (EnemyFSM turret in affectedTurrets) {
+            if (turret != null) {
+                turret.ActivateSuperMode();
+            }
+        }
 
         ClosePuzzle();
     }
