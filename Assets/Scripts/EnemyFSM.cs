@@ -21,6 +21,9 @@ public class EnemyFSM : MonoBehaviour
     [SerializeField, Min(1f)] private float superSightRangeMultiplier = 2f;
     [Tooltip("Multiplier for the turret's viewing half-angle, capped at 180 degrees.")]
     [SerializeField, Min(1f)] private float superSightAngleMultiplier = 2f;
+
+    private bool activated;
+
     public bool IsSuperMode { get; private set; }
 
     public void ActivateSuperMode()
@@ -39,16 +42,26 @@ public class EnemyFSM : MonoBehaviour
         }
     }
 
+    public void Deactivate() {
+        activated = false;
+    }
+
     void Start()
     {
+        activated = true;
         // Wait for live detection and start a fresh cooldown after a scene reload.
         currentState = EnemyState.Idle;
         lastShootTime = Time.time;
     }
 
     // Update is called once per frame
-    void Update()
-    {
+    void Update() {
+        // If turret is not active, then keep in Idle state
+        if (!activated) {
+            currentState = EnemyState.Idle;
+            return;
+        }
+
         if (currentState == EnemyState.Idle)
         {
             if (sightSensor.detectedObject != null)

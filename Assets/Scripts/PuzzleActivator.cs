@@ -56,6 +56,27 @@ public class PuzzleActivator : MonoBehaviour {
         playerInput.enabled = true;
     }
 
+    public void SucceedPuzzle() {
+        EnemyFSM[] affectedTurrets = turrets;
+        if (affectedTurrets == null || affectedTurrets.Length == 0) {
+            affectedTurrets = FindObjectsByType<EnemyFSM>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        }
+
+        // Deactivate all turrets
+        foreach (EnemyFSM turret in affectedTurrets) {
+            if (turret != null) {
+                turret.Deactivate();
+            }
+        }
+
+        // Delete all live bullets (gives player immunity)
+        ProjectileMovement[] projectiles = FindObjectsByType<ProjectileMovement>(FindObjectsSortMode.None);
+        foreach (ProjectileMovement projectile in projectiles) {
+            Destroy(projectile.gameObject);
+        }
+        ClosePuzzle();
+    }
+
     public void FailPuzzle() {
         EnemyFSM[] affectedTurrets = turrets;
         if (affectedTurrets == null || affectedTurrets.Length == 0) {

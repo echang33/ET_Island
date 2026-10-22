@@ -154,7 +154,7 @@ public class GraphUI : MonoBehaviour {
                 activator.FailPuzzle();
             } else {
                 Debug.Log("Correct.");
-                activator.ClosePuzzle();
+                activator.SucceedPuzzle();
             }
         } else if (puzzleType == 1) {
             // Check whether the submitted vertices form a Hamiltonian path
@@ -163,7 +163,7 @@ public class GraphUI : MonoBehaviour {
                 activator.FailPuzzle();
             } else {
                 Debug.Log("Correct.");
-                activator.ClosePuzzle();
+                activator.SucceedPuzzle();
             }
         } else {
             // Check whether the submitted vertices form a min vertex cover
@@ -175,7 +175,7 @@ public class GraphUI : MonoBehaviour {
                 activator.FailPuzzle();
             } else {
                 Debug.Log("Correct.");
-                activator.ClosePuzzle();
+                activator.SucceedPuzzle();
             }
         }
     }
