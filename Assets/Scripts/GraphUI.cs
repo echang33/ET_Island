@@ -8,6 +8,7 @@ using UnityEngine;
 using TMPro;
 
 public class GraphUI : MonoBehaviour {
+    [SerializeField] private TMP_Text questionText;
     [SerializeField] private GameObject vertexPrefab;
     [SerializeField] private GameObject edgePrefab;
 
@@ -33,6 +34,14 @@ public class GraphUI : MonoBehaviour {
     // vertices and edges store the rendered UI GameObjects
     private List<GameObject> vertices, edges;
 
+    // The type of puzzle (0: max clique, 1: hamiltonian path, 2: min vertex cover)
+    private int puzzleType;
+    private string[] questions = {
+        "Find a maximum clique in the graph. List the vertex numbers of the clique (comma separated). If there are multiple maximum cliques, you may enter any.",
+        "Find a Hamiltonian path in the graph. List the vertex numbers of the path in order (comma separated). If there are multiple Hamiltonian paths, you may enter any.",
+        "Find a minimum vertex cover in the graph. List the vertex numbers of the vertex cover (comma separated). If there are minimum vertex covers, you may enter any."
+    };
+
     // Store a reference to the PuzzleActivator object that activated
     // this puzzle.
     private PuzzleActivator activator;
@@ -44,7 +53,10 @@ public class GraphUI : MonoBehaviour {
         vertices = new List<GameObject>();
         edges = new List<GameObject>();
 
-        graph = new Graph(numNodes, edgeDensity);
+        System.Random rng = new System.Random();
+        puzzleType = rng.Next(3); // Generate puzzle type randomly between [0, 2]
+        questionText.text = questions[puzzleType]; // Set question text based on puzzle type
+        graph = new Graph(numNodes, edgeDensity, puzzleType == 1);
         DrawGraph();
     }
 
@@ -60,12 +72,11 @@ public class GraphUI : MonoBehaviour {
         // Draw edges
         for (int i = 0; i < graph.N; i++) {
             for (int j = i + 1; j < graph.N; j++) {
-                if (graph.adjMat[i][j] == true) {
+                if (graph.adjMat[i, j] == true) {
                     CreateEdge(i, j);
                 }
             }
-        }
-        
+        }  
     }
 
     private void CreateVertex(int id) {
@@ -133,16 +144,39 @@ public class GraphUI : MonoBehaviour {
 
         Debug.Log(string.Join(", ", nodes));
 
-        // Check whether the submitted vertices form a max clique
-        if (!graph.CheckClique(nodes)) {
-            Debug.Log("Incorrect. The vertices do not form a clique.");
-            activator.FailPuzzle();
-        } else if (nodes.Count < graph.maxClique) {
-            Debug.Log("Incorrect. There is a larger clique.");
-            activator.FailPuzzle();
+        if (puzzleType == 0) {
+            // Check whether the submitted vertices form a max clique
+            if (!graph.CheckClique(nodes)) {
+                Debug.Log("Incorrect. The vertices do not form a clique.");
+                activator.FailPuzzle();
+            } else if (nodes.Count < graph.maxClique) {
+                Debug.Log("Incorrect. There is a larger clique.");
+                activator.FailPuzzle();
+            } else {
+                Debug.Log("Correct.");
+                activator.ClosePuzzle();
+            }
+        } else if (puzzleType == 1) {
+            // Check whether the submitted vertices form a Hamiltonian path
+            if (!graph.CheckHamiltonianPath(nodes)) {
+                Debug.Log("Incorrect. The vertices do not correspond to a Hamiltonian path.");
+                activator.FailPuzzle();
+            } else {
+                Debug.Log("Correct.");
+                activator.ClosePuzzle();
+            }
         } else {
-            Debug.Log("Correct.");
-            activator.ClosePuzzle();
+            // Check whether the submitted vertices form a min vertex cover
+            if (!graph.VertexCover(nodes)) {
+                Debug.Log("Incorrect. The vertices do not form a vertex cover.");
+                activator.FailPuzzle();
+            } else if (nodes.Count > graph.minVertexCover) {
+                Debug.Log("Incorrect. There is a smaller vertex cover.");
+                activator.FailPuzzle();
+            } else {
+                Debug.Log("Correct.");
+                activator.ClosePuzzle();
+            }
         }
     }
 }

@@ -576,6 +576,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ad35f5685fc486148b4aca6780ce978f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  questionText: {fileID: 6581686335509870937}
   vertexPrefab: {fileID: 1234811526666106415, guid: e02429c81283b4e408600309b44898f5,
     type: 3}
   edgePrefab: {fileID: 7416943251172266012, guid: c8bce5df0c378de47aec711976b34ae9,
@@ -653,8 +654,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Find a maximum clique in the graph. List the vertex numbers of the clique
-    (comma separated). If there are multiple maximum cliques, you may enter any.
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
