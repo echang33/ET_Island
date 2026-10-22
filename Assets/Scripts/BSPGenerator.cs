@@ -88,6 +88,7 @@ public class BSPGenerator : MonoBehaviour {
     }
 
     public void Generate() {
+        // Use BSP to generate irregularly shaped rectangular rooms
         SplitRecursively(new Region(boundsMin, boundsMax));
         N = leafRegions.Count;
 
@@ -95,11 +96,15 @@ public class BSPGenerator : MonoBehaviour {
         for (int i = 0; i < N; i++) {
             removed.Add(false);
         }
+        // Create graph, where edges connect rooms that share a face
         BuildAdjacencyGraph();
+        // Remove regions (while keeping graph connected) to make generation interesting
         RemoveRegions();
+        // Generate walls forming the labryinth
         GenerateWalls();
     }
 
+    // Depth first search to check connectivity
     private void DFS(int cur, bool[] vis) {
         if (vis[cur] || removed[cur]) {
             return;
@@ -111,6 +116,7 @@ public class BSPGenerator : MonoBehaviour {
         }
     }
 
+    // Returns true if graph is connected
     private bool IsConnected() {
         bool[] vis = new bool[N];
         for (int i = 0; i < N; i++) {
@@ -127,6 +133,7 @@ public class BSPGenerator : MonoBehaviour {
         return true;
     }
 
+    // Remove subset of rooms while keeping labryinth connected
     private void RemoveRegions() {
         // Generate random permutation for order to attempt removals
         int[] p = new int[N];
@@ -152,7 +159,6 @@ public class BSPGenerator : MonoBehaviour {
                 removedCnt++;
             }
         }
-        print(removedCnt);
         CompressGraph();
     }
 
@@ -233,29 +239,31 @@ public class BSPGenerator : MonoBehaviour {
         List<SplitAxis> available = new List<SplitAxis>();
         Vector3 size = region.Size;
 
+        // Find which axes can be split (after split no dimension should go below min thresholds)
         if (size.x >= 2f * minWidth) available.Add(SplitAxis.X);
         if (size.y >= 2f * minHeight) available.Add(SplitAxis.Y);
         if (size.z >= 2f * minDepth) available.Add(SplitAxis.Z);
 
+        // No splits left means this is a final leaf region
         if (available.Count == 0) {
             leafRegions.Add(region);
             return;
         }
-
-        Split(region, available[rng.Next(available.Count)],
-            out Region first, out Region second);
+        Split(region, available[rng.Next(available.Count)], out Region first, out Region second);
 
         SplitRecursively(first);
         SplitRecursively(second);
     }
 
-    private void Split(Region region, SplitAxis axis,
-        out Region first, out Region second) {
+    // Splits one region along specified axis. Split coordinate chosen uniform at random within valid range
+    private void Split(Region region, SplitAxis axis, out Region first, out Region second) {
         int i = (int)axis;
         float minLength = i == 0 ? minWidth : i == 1 ? minHeight : minDepth;
 
         Vector3 min = region.Min;
         Vector3 max = region.Max;
+        // The min and max coordinate values we are allowed to split on (ensuring that both regions
+        // do not go below min room length along the coordinate)
         float splitMin = min[i] + minLength;
         float splitMax = max[i] - minLength;
         float splitPosition = splitMin + (float) rng.NextDouble() * (splitMax - splitMin);
@@ -275,13 +283,11 @@ public class BSPGenerator : MonoBehaviour {
         v = axis == 2 ? 1 : 2;
     }
 
-    private static float MinOn(Region r, int axis) => r.Min[axis];
-    private static float MaxOn(Region r, int axis) => r.Max[axis];
-
     private static bool ApproximatelyEqual(float a, float b, float epsilon) {
         return Mathf.Abs(a - b) <= epsilon;
     }
 
+    // Create graph where each region is a node, and edges connect regions that touch on a face
     private void BuildAdjacencyGraph() {
         for (int i = 0; i < N; i++) {
             adjList.Add(new List<(int, int)>());
@@ -466,6 +472,8 @@ public class BSPGenerator : MonoBehaviour {
         }
     }
 
+    // Create a wall panel (3D cube primitive in Unity) that is normal to axis, with the other two dimensions
+    // specified by [uMin, uMax] and [vMin, vMax]
     private void CreateWallPanel(int axis, float plane, float uMin, float uMax, float vMin, float vMax) {
         if (uMax <= uMin || vMax <= vMin) return;
 
