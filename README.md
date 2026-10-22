@@ -77,13 +77,13 @@ Not applicable
 
 ### Project Checkpoint 3-4: 3D Scenes and Models (Ch 3+4, 10)
 
-For the next checkpoint, we plan on creating additional rooms and environmental assets, so that we can then use those building blocks to generate larger data center levels that combine multiple rooms, obstacles, and puzzles. We may experiment with basic procedural generation techniques (if time permits).
+~~For the next checkpoint, we plan on creating additional rooms and environmental assets, so that we can then use those building blocks to generate larger data center levels that combine multiple rooms, obstacles, and puzzles. We may experiment with basic procedural generation techniques (if time permits).~~
 
-We also plan on smoothing out movement mechanics. Currently the player can jump even while in the air, so that will need to be fixed. Some of the movement and gravity also don't feel as smooth as we would like to, so we plan on refining those controls. 
+~~We also plan on smoothing out movement mechanics. Currently the player can jump even while in the air, so that will need to be fixed. Some of the movement and gravity also don't feel as smooth as we would like to, so we plan on refining those controls. ~~
 
-We also plan on implementing more types of puzzles. Since we already have a graph UI, this will be easy to expand. For example, we can add finding Hamiltonian paths and minimum vertex cover. We also plan to connect puzzles more directly to progression through the data center. Successfully solving puzzles will allow the player to access previously restricted areas.
+~~We also plan on implementing more types of puzzles. Since we already have a graph UI, this will be easy to expand. For example, we can add finding Hamiltonian paths and minimum vertex cover. We also plan to connect puzzles more directly to progression through the data center. Successfully solving puzzles will allow the player to access previously restricted areas.~~
 
-## Development PLan
+## Development
 
 ### Project Checkpoint 1-2:
 * Movement: We have implemented basic movement (WASD, jumping mechanics). In the future, crouching can also be implemented, but that can be for later on.
@@ -98,9 +98,38 @@ We also plan on implementing more types of puzzles. Since we already have a grap
 ![Turret](./Screenshots/Turret.png)
 ![GraphPuzzle](./Screenshots/game_clique_puzzle.png)
 
-### Project Checkpoint 3-4:
+### Project Part 2: 3D Scenes and Models 
+
+Two more puzzle types were added, one for finding the Hamiltonian path in a graph and another for finding the minimum vertex cover. For the Hamiltonian path puzzle, the graph is guaranteed to be generated with at least one Hamiltonian path. There is a 1/3 probability for each of the 3 puzzle types appearing when activated. See the screenshots below for the new puzzle type prompts:
+
+![Ham Path](./Screenshots/hamiltonian_path.png)
+![Vertex Cover](./Screenshots/min_vertex_cover.png)
+
+Free assets were also incorporated, found from the Unity asset store. There is now a 3D model for our main character, which is a miniature person with glasses. Additionally, there are 3D models for the enemy turrets, puzzle activator (stand with a screen), and also general server room props (to make it look more like a data center). The links to these assets are below:
+
 Assets used: 
 [LowPoly Server Room Props](https://assetstore.unity.com/packages/3d/environments/lowpoly-server-room-props-197268) - Datacenter interior design
 [LowPoly Sci-fi Turrets](https://assetstore.unity.com/packages/3d/props/weapons/low-poly-sci-fi-turrets-demo-333204) - Enemy AI turrets
 [Mini Simple Characters](https://assetstore.unity.com/packages/3d/characters/humanoids/mini-simple-characters-free-demo-262799) - Main character Chi-Poh Le model 
 
+A screenshot of the level:
+![Datacenter Level](./Screenshots/datacenter.png)
+
+AI was implemented for the enemy turrets. It uses a FSM design as described in the textbook, switching between Idle and AttackPlayer based on if it is within range. Once in range, it directly turns to the player and fires bullets. 
+
+When the player fails the puzzle, the turrets get buffed range and firing speed, as a punishment for the player. When the player beats the puzzle, the turrets are deactivated and any live bullets in the air are deleted, giving the player immunity.
+
+Lastly (but not least), procedural generation was also partially implemented to generate the "labryinth" like datacenter we have been envisioning. The algorithm uses binary space partitioning to recursively split a rectangular region by one of the 3 axis aligned planes. The splitting occurs until a region can no longer be split on any axis without going below a minimum size along one dimension. Then, a graph is built where nodes are the leaf regions, and an edge goes between regions that share an overlapping face exceeding certain dimensions. 
+
+Afterwards, a fraction of the rooms (that do not disconnect the remaining graph) are randomly removed. This creates a more random labryinth like look. For the remaining rooms, openings of a fixed size are generated randomly within the shared face for adjacent rooms. These act like doors (or holes in the ceiling / floor) to allow the player to navigate the rooms. Currently they are not so accessible; in the future, we will add stairs and ladders to make all of these openings traversable.
+
+Finally, the rooms are actually created via 3D cube primitives in Unity. This process is actually non trivial because of the holes in the walls. WLOG, suppose the wall dimensions are x and y (in reality they may be x and z or y and z as well). The wall generation algorithm works as follows:
+- All holes on the wall are collected.
+- The x coordinates for the start and the end of each hole are all added to a list, and then sorted.
+- These x coordinates split the wall into vertical strips (x coordinates within an epsilon are considered to be the same).
+- For each pair of adjacent x coordinates (defining a vertical strip), find all holes that cross this strip, and sort their y intervals. Then, iterate through and draw the y ranges surrounding the hole intervals.
+
+There are many configurable parameters going into the generation algorithm described above: overall volume dimensions, minimum region dimensions, minimum face overlap, door size, wall thickness, shrinkage border, removal percentage. There will likely need to be even more added in the future as we make it traversable, and also add textures and assets into each room. Here's what the labryinth looks like right now:
+
+![labyrinth outside](./Screenshots/labryinth_outside.png)
+![labyrinth inside](./Screenshots/labryinth_inside.png)
