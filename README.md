@@ -108,9 +108,15 @@ Two more puzzle types were added, one for finding the Hamiltonian path in a grap
 Free assets were also incorporated, found from the Unity asset store. There is now a 3D model for our main character, which is a miniature person with glasses. Additionally, there are 3D models for the enemy turrets, puzzle activator (stand with a screen), and also general server room props (to make it look more like a data center). The links to these assets are below:
 
 Assets used: 
-[LowPoly Server Room Props](https://assetstore.unity.com/packages/3d/environments/lowpoly-server-room-props-197268) - Datacenter interior design
-[LowPoly Sci-fi Turrets](https://assetstore.unity.com/packages/3d/props/weapons/low-poly-sci-fi-turrets-demo-333204) - Enemy AI turrets
-[Mini Simple Characters](https://assetstore.unity.com/packages/3d/characters/humanoids/mini-simple-characters-free-demo-262799) - Main character Chi-Poh Le model 
+
+[LowPoly Server Room Props](https://assetstore.unity.com/packages/3d/environments/lowpoly-server-room-props-197268)
+Datacenter interior design (includes the server room props, screens, textures, and materials for walls and ceilings)
+
+[LowPoly Sci-fi Turrets](https://assetstore.unity.com/packages/3d/props/weapons/low-poly-sci-fi-turrets-demo-333204) 
+Enemy AI turrets
+
+[Mini Simple Characters](https://assetstore.unity.com/packages/3d/characters/humanoids/mini-simple-characters-free-demo-262799)
+Main character Chi Poh Le model 
 
 A screenshot of the level:
 ![Datacenter Level](./Screenshots/datacenter.png)
@@ -133,3 +139,23 @@ There are many configurable parameters going into the generation algorithm descr
 
 ![labyrinth outside](./Screenshots/labryinth_outside.png)
 ![labyrinth inside](./Screenshots/labryinth_inside.png)
+
+### Project Part 3: Visual Effects
+
+For the next checkpoint, we plan on implementing various visual effects to make our game feel more realistic. The first includes some sort of death effect when our character touches an obstacle or is shot by the turrets. This could be done by using particle effects and can also extend to successfully completing a puzzle. 
+
+The second would be to add in animations for the movement of our character and for the transition between rooms. We will also experiment with lighting to create a darker, more industrial atmosphere, while using emissive materials to make lasers, security systems, and interactive objects stand out.
+
+Finally, we will continue refining procedural generation by adding environmental assets to generated rooms and improving navigation between rooms, particularly through stairs and ladders.
+
+## Instructions for Testing the Project
+
+- Open the Unity project and load the scene `TestLevel`.
+- Press the Play button in the Unity Editor to start the game.
+- Use **WASD** to move the player and **Space** to jump.
+- Avoid laser beams and enemy turrets.
+- Touch or approach the puzzle terminal to activate a puzzle.
+- Enter your answer into the text field and submit it using `[submission control]`.
+- An incorrect answer activates stronger turret behavior, while a correct answer deactivates the turrets and removes existing projectiles.
+- Touching a laser or getting hit by a turret projectile kills the player and causes a respawn.
+
