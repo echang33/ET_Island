@@ -118,6 +118,9 @@ Enemy AI turrets
 [Mini Simple Characters](https://assetstore.unity.com/packages/3d/characters/humanoids/mini-simple-characters-free-demo-262799)
 Main character Chi Poh Le model 
 
+[Modular_SciFi_Pack](https://assetstore.unity.com/packages/3d/environments/sci-fi/modular-scifi-pack-146-objects-lowpoly-354154)
+Main character Chi Poh Le model 
+
 A screenshot of the level:
 ![Datacenter Level](./Screenshots/datacenter.png)
 
