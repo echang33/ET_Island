@@ -119,7 +119,7 @@ Enemy AI turrets
 Main character Chi Poh Le model 
 
 [Modular_SciFi_Pack](https://assetstore.unity.com/packages/3d/environments/sci-fi/modular-scifi-pack-146-objects-lowpoly-354154)
-Main character Chi Poh Le model 
+Environment
 
 A screenshot of the level:
 ![Datacenter Level](./Screenshots/datacenter.png)
