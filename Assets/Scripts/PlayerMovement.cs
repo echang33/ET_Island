@@ -18,10 +18,17 @@ public class PlayerMovement : MonoBehaviour {
     private CapsuleCollider capsule;
     private Rigidbody rb;
     private Vector2 movementValue;
-    private Vector2 lookValue; 
+
+    private float pitchInput;
+    private float yawInput;
+
     private float xRotation = 0f; 
     [SerializeField] private float gravityMultiplier = 2f;
     private readonly RaycastHit[] groundHits = new RaycastHit[16];
+
+    [SerializeField] private float minPitch = 0f;
+    [SerializeField] private float maxPitch = 60f;
+    private bool jumping = false;
 
     private void Awake() {
         rb = GetComponent<Rigidbody>();
@@ -35,7 +42,10 @@ public class PlayerMovement : MonoBehaviour {
     }
 
     public void OnLook(InputValue value) {
-        lookValue = value.Get<Vector2>() * rotationSpeed;
+        Vector2 input = value.Get<Vector2>();
+
+        yawInput += input.x;
+        pitchInput += input.y;
     }
 
     private bool IsGrounded() {
@@ -58,26 +68,37 @@ public class PlayerMovement : MonoBehaviour {
     }
 
     public void OnJump(InputValue value) {
-        if (value.isPressed && rb.velocity.y <= 0.1f && IsGrounded()) {
-            rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
-        }
+        jumping = value.isPressed;
     }
 
     void Update() {
-        // Pitch the pivot up and down. Because the camera is set back, it will orbit.
-        xRotation -= lookValue.y * Time.deltaTime;
-        xRotation = Mathf.Clamp(xRotation, -90f, 90f);
-        cameraPivot.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
+        // Pitch is applied directly to the camera pivot.
+        xRotation -= pitchInput * rotationSpeed;
+        xRotation = Mathf.Clamp(xRotation, minPitch, maxPitch);
 
-        // Yaw the entire player body left and right
-        transform.Rotate(Vector3.up * lookValue.x * Time.deltaTime);
+        cameraPivot.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
+        // Consume mouse input after applying it.
+        pitchInput = 0f;
     }
 
     void FixedUpdate() {
         Vector3 movement = (transform.right * movementValue.x) + (transform.forward * movementValue.y);
         rb.velocity = new Vector3(movement.x, rb.velocity.y, movement.z);
         
+        // Apply horizontal rotation to the Rigidbody (this rotates the camera as well with respect to pivot).
+        float yaw = yawInput * rotationSpeed;
+        rb.MoveRotation(rb.rotation * Quaternion.Euler(0f, yaw, 0f));
+
+        // Consume mouse input after applying it.
+        yawInput = 0f;
+
         // Extra gravity (allows player to fall faster)
         rb.AddForce(Physics.gravity * (gravityMultiplier - 1f), ForceMode.Acceleration);
+
+        // Automatically jump whenever grounded and jump key is pressed
+        if (jumping && rb.velocity.y <= 0.1f && IsGrounded()) {
+            rb.velocity = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
+            rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+        }
     }
 }

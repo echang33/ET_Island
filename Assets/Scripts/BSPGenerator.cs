@@ -99,7 +99,7 @@ public class BSPGenerator : MonoBehaviour {
         // Create graph, where edges connect rooms that share a face
         BuildAdjacencyGraph();
         // Remove regions (while keeping graph connected) to make generation interesting
-        RemoveRegions();
+        RemoveRegionsRandom();
         // Generate walls forming the labryinth
         GenerateWalls();
     }
@@ -133,8 +133,13 @@ public class BSPGenerator : MonoBehaviour {
         return true;
     }
 
+    // Removes an
+    private void RemoveRegionsRing() {
+
+    }
+
     // Remove subset of rooms while keeping labryinth connected
-    private void RemoveRegions() {
+    private void RemoveRegionsRandom() {
         // Generate random permutation for order to attempt removals
         int[] p = new int[N];
         for (int i = 0; i < N; i++) {
