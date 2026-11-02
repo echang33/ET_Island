@@ -5,7 +5,12 @@ using UnityEngine;
 public class BSPGenerator : MonoBehaviour {
     [Header("Bounds")]
     public Vector3 boundsMin = Vector3.zero;
-    public Vector3 boundsMax = new Vector3(100f, 50f, 100f);
+    public Vector3 boundsMax = new Vector3(200f, 100f, 200f);
+
+    // Procedural generation hollows out the center (innerRemoveBorder), and removes rooms on the outer
+    // border (outerRemoveBorder).
+    public float outerRemoveBorder = 0.1f;
+    public float innerRemoveBorder = 0.4f;
 
     [Header("Minimum Region Dimensions")]
     [Min(0.01f)] public float minWidth = 10f;
@@ -21,10 +26,19 @@ public class BSPGenerator : MonoBehaviour {
     [Min(0.01f)] public float wallThickness = 0.2f;
     public Vector2 openingSize = new Vector2(2f, 2f);
     public Material wallMaterial;
+    
+    [Header("Ramps")]
+    public float rampLength = 2f;
+    public float minRampHeight = 0.5f;
+    public Material rampMaterial;
 
     [Header("Randomness")]
     public int seed = 42;
     public float removePercent = 0.4f;
+
+    [Header("Lights")]
+    public GameObject roomLightPrefab;
+    public GameObject coreLightPrefab;
 
     [Serializable]
     public struct Region {
@@ -79,7 +93,7 @@ public class BSPGenerator : MonoBehaviour {
     private List<bool> removed;
 
     private System.Random rng;
-    private Transform wallRoot;
+    private Transform genRoot;
 
     private void Awake() {
         UnityEngine.Random.InitState(seed);
@@ -98,10 +112,21 @@ public class BSPGenerator : MonoBehaviour {
         }
         // Create graph, where edges connect rooms that share a face
         BuildAdjacencyGraph();
-        // Remove regions (while keeping graph connected) to make generation interesting
-        RemoveRegionsRandom();
+
+        // Hollow out center and remove outer ring or regions
+        Vector3 outerMin = boundsMin + (boundsMax - boundsMin) * outerRemoveBorder;
+        Vector3 outerMax = boundsMin + (boundsMax - boundsMin) * (1 - outerRemoveBorder);
+        Vector3 innerMin = boundsMin + (boundsMax - boundsMin) * innerRemoveBorder;
+        Vector3 innerMax = boundsMin + (boundsMax - boundsMin) * (1 - innerRemoveBorder);
+        RemoveRegionsRing(outerMin, outerMax, innerMin, innerMax);
+        
         // Generate walls forming the labryinth
         GenerateWalls();
+
+        // Add central light (killswitch at the center of the data center)
+        GameObject coreLight = Instantiate(coreLightPrefab);
+        coreLight.transform.SetParent(genRoot, false);
+        coreLight.transform.localPosition = (boundsMin + boundsMax) * 0.5f;
     }
 
     // Depth first search to check connectivity
@@ -133,9 +158,19 @@ public class BSPGenerator : MonoBehaviour {
         return true;
     }
 
-    // Removes an
-    private void RemoveRegionsRing() {
+    private bool inBox(Vector3 p, Vector3 boxMin, Vector3 boxMax) {
+        return (p.x >= boxMin.x && p.y >= boxMin.y && p.z >= boxMin.z) && 
+                (p.x <= boxMax.x && p.y <= boxMax.y && p.z <= boxMax.z);
+    } 
 
+    // Leaves a rectangular "ring" of regions, hollowing out the center and border
+    private void RemoveRegionsRing(Vector3 outerMin, Vector3 outerMax, Vector3 innerMin, Vector3 innerMax) {
+        for (int i = 0; i < N; i++) {
+            if (inBox(leafRegions[i].Center, innerMin, innerMax) || !inBox(leafRegions[i].Center, outerMin, outerMax)) {
+                removed[i] = true;
+            }
+        }
+        CompressGraph();
     }
 
     // Remove subset of rooms while keeping labryinth connected
@@ -376,8 +411,8 @@ public class BSPGenerator : MonoBehaviour {
     // Wall GameObjects
     private void GenerateWalls() {
         GameObject root = new GameObject("Generated Walls");
-        wallRoot = root.transform;
-        wallRoot.SetParent(transform, false);
+        genRoot = root.transform;
+        genRoot.SetParent(transform, false);
 
         for (int i = 0; i < leafRegions.Count; i++) {
             Region region = leafRegions[i];
@@ -423,14 +458,9 @@ public class BSPGenerator : MonoBehaviour {
             return;
         }
 
-        // Clip all openings to this room's actual wall face.
         List<(float uMin, float uMax, float vMin, float vMax)> holes = new List<(float, float, float, float)>();
         foreach (Edge edge in faceEdges) {
-            float hu0 = Mathf.Max(uMin, edge.OpeningMin[u]);
-            float hu1 = Mathf.Min(uMax, edge.OpeningMax[u]);
-            float hv0 = Mathf.Max(vMin, edge.OpeningMin[v]);
-            float hv1 = Mathf.Min(vMax, edge.OpeningMax[v]);
-            holes.Add((hu0, hu1, hv0, hv1));
+            holes.Add((edge.OpeningMin[u], edge.OpeningMax[u], edge.OpeningMin[v], edge.OpeningMax[v]));
         }
 
         // Partition the face at every opening's U boundaries.
@@ -475,6 +505,74 @@ public class BSPGenerator : MonoBehaviour {
                 CreateWallPanel(axis, plane, left, right, cursor, vMax);
             }
         }
+
+        // Generate ramps to elevated openings.
+        foreach (var hole in holes) {
+            if (axis == 1) continue;
+
+            // Determine the horizontal width and bottom of the opening.
+            float rampWidth;
+            float openingBottom;
+            if (axis == 0) {
+                // X-normal wall: horizontal direction is Z, vertical is Y.
+                rampWidth = hole.vMax - hole.vMin;
+                openingBottom = hole.uMin;
+            } else {
+                // Z-normal wall: horizontal direction is X, vertical is Y.
+                rampWidth = hole.uMax - hole.uMin;
+                openingBottom = hole.vMin;
+            }
+
+            // Add wallThickness since roomMin / roomMax represent exterior room size.
+            float floorY = roomMin.y + wallThickness;
+            float rampHeight = openingBottom - floorY;
+
+            // No ramp needed if the opening low enough.
+            if (rampHeight <= minRampHeight) {
+                continue;
+            }
+
+            // Determine which direction points out through this wall.
+            int direction = plane > region.Center[axis] ? 1 : -1;
+
+            // Position the ramp so its high end meets the wall.
+            Vector3 position = new Vector3(0, floorY, 0);
+            if (axis == 0) {
+                position.z = (hole.vMin + hole.vMax) * 0.5f;
+                position.x = plane - direction * (rampLength * 0.5f + wallThickness * 0.5f);
+            } else {
+                position.x = (hole.uMin + hole.uMax) * 0.5f;
+                position.z = plane - direction * (rampLength * 0.5f + wallThickness * 0.5f);
+            }
+
+            // Need to rotate ramp (local +Z is high end) to match opening
+            float rotationY = (axis == 0 ? (direction > 0 ? 90f : 270f) : (direction > 0 ? 0f : 180f));
+
+            GameObject ramp = new GameObject("Ramp");
+            ramp.transform.SetParent(genRoot, false);
+            ramp.transform.localPosition = position;
+
+            RampMesh rampMesh = ramp.AddComponent<RampMesh>();
+            rampMesh.width = rampWidth;
+            rampMesh.length = rampLength;
+            rampMesh.height = rampHeight;
+            rampMesh.rotationY = rotationY;
+            rampMesh.material = rampMaterial;
+            rampMesh.Generate();
+
+            MeshCollider meshCollider = ramp.AddComponent<MeshCollider>();
+            meshCollider.sharedMesh = rampMesh.GetComponent<MeshFilter>().sharedMesh;
+        }
+
+        // Room light for ceiling
+        if (axis == 1 && plane > region.Center[axis]) {
+            GameObject roomLight = Instantiate(roomLightPrefab);
+            roomLight.transform.SetParent(genRoot, false);
+
+            Vector3 lightPos = region.Center;
+            lightPos.y = plane - wallThickness;
+            roomLight.transform.localPosition = lightPos;
+        }
     }
 
     // Create a wall panel (3D cube primitive in Unity) that is normal to axis, with the other two dimensions
@@ -497,7 +595,7 @@ public class BSPGenerator : MonoBehaviour {
 
         GameObject wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
         wall.name = "Wall";
-        wall.transform.SetParent(wallRoot, false);
+        wall.transform.SetParent(genRoot, false);
         wall.transform.localPosition = center;
         wall.transform.localRotation = Quaternion.identity;
         wall.transform.localScale = size;
