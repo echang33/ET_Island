@@ -120,8 +120,8 @@ public class BSPGenerator : MonoBehaviour {
         Vector3 innerMax = boundsMin + (boundsMax - boundsMin) * (1 - innerRemoveBorder);
         RemoveRegionsRing(outerMin, outerMax, innerMin, innerMax);
         
-        // Generate walls forming the labryinth
-        GenerateWalls();
+        // Generate rooms forming the labryinth
+        GenerateRooms();
 
         // Add central light (killswitch at the center of the data center)
         GameObject coreLight = Instantiate(coreLightPrefab);
@@ -408,9 +408,9 @@ public class BSPGenerator : MonoBehaviour {
         return false;
     }
 
-    // Wall GameObjects
-    private void GenerateWalls() {
-        GameObject root = new GameObject("Generated Walls");
+    // Generate labryinth rooms
+    private void GenerateRooms() {
+        GameObject root = new GameObject("Generated Labryinth");
         genRoot = root.transform;
         genRoot.SetParent(transform, false);
 
@@ -427,7 +427,20 @@ public class BSPGenerator : MonoBehaviour {
                 DrawRoomFace(i, axis, min[axis] + wallThickness * 0.5f, min, max);
                 DrawRoomFace(i, axis, max[axis] - wallThickness * 0.5f, min, max);
             }
+            GenerateRoomLight(i);
         }
+    }
+
+    private void GenerateRoomLight(int regionIndex) {
+        Region region = leafRegions[regionIndex];
+
+        // Room light for ceiling
+        GameObject roomLight = Instantiate(roomLightPrefab);
+        roomLight.transform.SetParent(genRoot, false);
+
+        Vector3 lightPos = region.Center;
+        lightPos.y = region.Max.y - shrinkageBorder - wallThickness - 0.5f;
+        roomLight.transform.localPosition = lightPos;
     }
 
     private void DrawRoomFace(int regionIndex, int axis, float plane, Vector3 roomMin, Vector3 roomMax) {
@@ -562,16 +575,6 @@ public class BSPGenerator : MonoBehaviour {
 
             MeshCollider meshCollider = ramp.AddComponent<MeshCollider>();
             meshCollider.sharedMesh = rampMesh.GetComponent<MeshFilter>().sharedMesh;
-        }
-
-        // Room light for ceiling
-        if (axis == 1 && plane > region.Center[axis]) {
-            GameObject roomLight = Instantiate(roomLightPrefab);
-            roomLight.transform.SetParent(genRoot, false);
-
-            Vector3 lightPos = region.Center;
-            lightPos.y = plane - wallThickness;
-            roomLight.transform.localPosition = lightPos;
         }
     }
 

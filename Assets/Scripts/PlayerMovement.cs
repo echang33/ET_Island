@@ -12,8 +12,8 @@ public class PlayerMovement : MonoBehaviour {
     public float rotationSpeed;
     public float jumpForce;
     
-    // The invisible point the camera will orbit around
-    public Transform cameraPivot;
+    // An empty GameObject placed at player head, tracked by Cinemachine camera
+    public GameObject cameraTarget;
 
     private CapsuleCollider capsule;
     private Rigidbody rb;
@@ -76,7 +76,7 @@ public class PlayerMovement : MonoBehaviour {
         xRotation -= pitchInput * rotationSpeed;
         xRotation = Mathf.Clamp(xRotation, minPitch, maxPitch);
 
-        cameraPivot.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
+        cameraTarget.transform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
         // Consume mouse input after applying it.
         pitchInput = 0f;
     }
