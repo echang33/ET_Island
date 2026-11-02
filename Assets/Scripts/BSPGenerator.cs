@@ -25,16 +25,20 @@ public class BSPGenerator : MonoBehaviour {
     [Min(0f)] public float shrinkageBorder = 0;
     [Min(0.01f)] public float wallThickness = 0.2f;
     public Vector2 openingSize = new Vector2(2f, 2f);
-    public Material wallMaterial;
     
     [Header("Ramps")]
     public float rampLength = 2f;
     public float minRampHeight = 0.5f;
-    public Material rampMaterial;
 
     [Header("Randomness")]
     public int seed = 42;
     public float removePercent = 0.4f;
+
+    [Header("Materials")]
+    public Material rampMaterial;
+    public Material wallMaterial;
+    public PhysicMaterial rampPhysicMaterial;
+    public PhysicMaterial wallPhysicMaterial;
 
     [Header("Lights")]
     public GameObject roomLightPrefab;
@@ -575,6 +579,7 @@ public class BSPGenerator : MonoBehaviour {
 
             MeshCollider meshCollider = ramp.AddComponent<MeshCollider>();
             meshCollider.sharedMesh = rampMesh.GetComponent<MeshFilter>().sharedMesh;
+            meshCollider.material = rampPhysicMaterial;
         }
     }
 
@@ -602,6 +607,7 @@ public class BSPGenerator : MonoBehaviour {
         wall.transform.localPosition = center;
         wall.transform.localRotation = Quaternion.identity;
         wall.transform.localScale = size;
+        wall.GetComponent<Collider>().material = wallPhysicMaterial;
 
         if (wallMaterial != null &&
             wall.TryGetComponent<Renderer>(out Renderer renderer)) {

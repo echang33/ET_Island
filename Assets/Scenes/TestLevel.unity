@@ -9535,7 +9535,7 @@ GameObject:
   m_Component:
   - component: {fileID: 438880899}
   - component: {fileID: 438880898}
-  - component: {fileID: 438880897}
+  - component: {fileID: 438880901}
   - component: {fileID: 438880900}
   m_Layer: 0
   m_Name: CinemachineCamera
@@ -9544,32 +9544,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &438880897
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 438880896}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 625c14eee3ad46c99df7c7c891ef668a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Damping: {x: 0.1, y: 0.5, z: 0.3}
-  ShoulderOffset: {x: 0.5, y: -0.4, z: 0}
-  VerticalArmLength: 0.4
-  CameraSide: 1
-  CameraDistance: 2
-  AvoidObstacles:
-    Enabled: 0
-    CollisionFilter:
-      serializedVersion: 2
-      m_Bits: 1
-    IgnoreTag: 
-    CameraRadius: 0.2
-    DampingIntoCollision: 0
-    DampingFromCollision: 0.5
 --- !u!114 &438880898
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9622,7 +9596,7 @@ Transform:
   m_GameObject: {fileID: 438880896}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 37.5, y: 197.38, z: -42}
+  m_LocalPosition: {x: 36.5, y: 197.78, z: -42}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -9664,6 +9638,32 @@ MonoBehaviour:
     NearLimit: 5
     FarLimit: 30
     MaxQualityBoost: 0.2
+--- !u!114 &438880901
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 438880896}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 625c14eee3ad46c99df7c7c891ef668a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Damping: {x: 0.1, y: 0.5, z: 0.3}
+  ShoulderOffset: {x: -0.5, y: 0, z: 0}
+  VerticalArmLength: 0.4
+  CameraSide: 1
+  CameraDistance: 2
+  AvoidObstacles:
+    Enabled: 0
+    CollisionFilter:
+      serializedVersion: 2
+      m_Bits: 1
+    IgnoreTag: 
+    CameraRadius: 0.2
+    DampingIntoCollision: 0
+    DampingFromCollision: 0.5
 --- !u!1001 &440137526
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -24903,16 +24903,18 @@ MonoBehaviour:
   minHeight: 16
   minDepth: 20
   adjacencyEpsilon: 0.001
-  minFaceOverlap: 3
+  minFaceOverlap: 5
   shrinkageBorder: 0
   wallThickness: 0.2
-  openingSize: {x: 2, y: 2}
-  wallMaterial: {fileID: 2100000, guid: a73ce97174548ff43becf7076bf810d5, type: 2}
+  openingSize: {x: 3, y: 3}
   rampLength: 5
   minRampHeight: 0.5
-  rampMaterial: {fileID: 2100000, guid: 457908cc7374a27418c3af22686cf39f, type: 2}
   seed: 42
   removePercent: 0.4
+  rampMaterial: {fileID: 2100000, guid: 1ece3b589875df947bea02a53b9a61ed, type: 2}
+  wallMaterial: {fileID: 2100000, guid: 1ece3b589875df947bea02a53b9a61ed, type: 2}
+  rampPhysicMaterial: {fileID: 13400000, guid: c24ab95ed3ef3b24886ac491ff85fe18, type: 2}
+  wallPhysicMaterial: {fileID: 13400000, guid: 7c95c233f1d5e554c8462098211f3c1e, type: 2}
   roomLightPrefab: {fileID: 2516595083928065413, guid: 85ec8c2f2ef003545a8d3f8e86853c9a,
     type: 3}
   coreLightPrefab: {fileID: 5135327680834152236, guid: 21dd11a86a229054dbb982e8b5f31cc7,
@@ -40281,7 +40283,7 @@ MonoBehaviour:
     m_Bits: 1
   m_VolumeTrigger: {fileID: 0}
   m_VolumeFrameworkUpdateModeOption: 2
-  m_RenderPostProcessing: 0
+  m_RenderPostProcessing: 1
   m_Antialiasing: 0
   m_AntialiasingQuality: 2
   m_StopNaN: 0
@@ -40370,7 +40372,7 @@ Transform:
   m_GameObject: {fileID: 1755678875}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 37.5, y: 197.38, z: -42}
+  m_LocalPosition: {x: 36.5, y: 197.78, z: -42}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

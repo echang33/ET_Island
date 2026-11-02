@@ -28,6 +28,9 @@ public class PlayerMovement : MonoBehaviour {
 
     [SerializeField] private float minPitch = 0f;
     [SerializeField] private float maxPitch = 60f;
+    
+    [SerializeField] private float maxSlopeAngle = 85f;
+
     private bool jumping = false;
 
     private void Awake() {
@@ -57,9 +60,11 @@ public class PlayerMovement : MonoBehaviour {
         int hitCount = Physics.SphereCastNonAlloc(origin, radius, Vector3.down,
             groundHits, distance, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
 
+        // Min y component of unit normal to be considered grounded (allows jumping on slopes)
+        float minGroundNormal = Mathf.Cos(maxSlopeAngle * Mathf.Deg2Rad);
         for (int i = 0; i < hitCount; i++) {
             RaycastHit hit = groundHits[i];
-            if (hit.collider.attachedRigidbody != rb && hit.normal.y >= 0.5f) {
+            if (hit.collider.attachedRigidbody != rb && hit.normal.y >= minGroundNormal) {
                 return true;
             }
         }
