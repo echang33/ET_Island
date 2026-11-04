@@ -33,15 +33,20 @@ public class PlayerMovement : MonoBehaviour {
 
     private bool jumping = false;
 
+    Animator animator;
     private void Awake() {
         rb = GetComponent<Rigidbody>();
         capsule = GetComponent<CapsuleCollider>();
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
+        animator = GetComponent<Animator>();
     }
     
     public void OnMove(InputValue value) {
         movementValue = value.Get<Vector2>() * speed;
+        bool isMoving = movementValue.sqrMagnitude > 0.01f;
+        animator.SetBool("isWalking", isMoving);
+        Debug.Log(isMoving);
     }
 
     public void OnLook(InputValue value) {
@@ -74,6 +79,7 @@ public class PlayerMovement : MonoBehaviour {
 
     public void OnJump(InputValue value) {
         jumping = value.isPressed;
+        animator.SetBool("isJumping", true);
     }
 
     void Update() {
@@ -104,6 +110,7 @@ public class PlayerMovement : MonoBehaviour {
         if (jumping && rb.velocity.y <= 0.1f && IsGrounded()) {
             rb.velocity = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
             rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+            animator.SetBool("isJumping", false);
         }
     }
 }
