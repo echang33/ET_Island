@@ -80,6 +80,7 @@ public class PlayerMovement : MonoBehaviour {
     public void OnJump(InputValue value) {
         jumping = value.isPressed;
         animator.SetBool("isJumping", true);
+        Debug.Log("Jumping is true");
     }
 
     void Update() {
@@ -110,7 +111,11 @@ public class PlayerMovement : MonoBehaviour {
         if (jumping && rb.velocity.y <= 0.1f && IsGrounded()) {
             rb.velocity = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
             rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+        }
+        if (animator.GetBool("isJumping") && rb.velocity.y <= 0f && IsGrounded())
+        {
             animator.SetBool("isJumping", false);
+            Debug.Log("Jumping: False");
         }
     }
 }
