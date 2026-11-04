@@ -22,15 +22,19 @@ public class PlayerMovement : MonoBehaviour {
     private float xRotation = 0f; 
     [SerializeField] private float gravityMultiplier = 2f;
 
+    Animator animator;
     private void Awake() {
         rb = GetComponent<Rigidbody>();
         capsule = GetComponent<CapsuleCollider>();
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
+        animator = GetComponent<Animator>();
     }
     
     public void OnMove(InputValue value) {
         movementValue = value.Get<Vector2>() * speed;
+        Debug.Log("Is Moving: " + (movementValue.sqrMagnitude > 0.01f));
+        animator.SetBool("isWalking", movementValue.sqrMagnitude > 0.01f);
     }
 
     public void OnLook(InputValue value) {
@@ -49,6 +53,7 @@ public class PlayerMovement : MonoBehaviour {
         // but was kind of jank, so reverting for now.
         if (value.isPressed) {
             rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+            animator.SetBool("isJumping", true);
         }
     }
 
@@ -68,5 +73,11 @@ public class PlayerMovement : MonoBehaviour {
         
         // Extra gravity (allows player to fall faster)
         rb.AddForce(Physics.gravity * (gravityMultiplier - 1f), ForceMode.Acceleration);
+
+        if (animator.GetBool("isJumping") && rb.velocity.y <= 0f && IsGrounded())
+        {
+            animator.SetBool("isJumping", false);
+            Debug.Log("Jumping: False");
+        }
     }
 }
