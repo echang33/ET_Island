@@ -17,8 +17,18 @@ public class GameManager : MonoBehaviour
     // How long to wait before reloading (in seconds)
     public float restartDelay = 2f; 
 
+    [Header("Spawn Settings")]
+    [Tooltip("Choose the alternate spawn when the scene starts. Set before pressing Play.")]
+    public bool useAlternateSpawn;
+    [Tooltip("The player root (ChiPohLe). If empty, uses Player Life's transform.")]
+    public Transform player;
+    public Transform normalSpawn;
+    public Transform alternateSpawn;
+
     void Start()
     {
+        PlacePlayerAtSpawn();
+
         if (playerLife != null)
         {
             playerLife.onDeath.AddListener(GameOver);
@@ -28,6 +38,40 @@ public class GameManager : MonoBehaviour
         if (gameOverText != null)
         {
             gameOverText.gameObject.SetActive(false);
+        }
+    }
+
+    private void PlacePlayerAtSpawn()
+    {
+        Transform playerTransform = player != null ? player : playerLife != null ? playerLife.transform : null;
+        Transform spawn = useAlternateSpawn ? alternateSpawn : normalSpawn;
+
+        // Keep the scene's existing player position until spawn markers are assigned.
+        if (spawn == null)
+        {
+            if (useAlternateSpawn)
+            {
+                Debug.LogWarning("Alternate spawn is selected, but no Alternate Spawn marker is assigned.", this);
+            }
+            return;
+        }
+
+        if (playerTransform == null)
+        {
+            Debug.LogWarning("Assign Player or Player Life to use the spawn markers.", this);
+            return;
+        }
+
+        if (playerTransform.TryGetComponent<Rigidbody>(out var body))
+        {
+            body.position = spawn.position;
+            body.rotation = spawn.rotation;
+            body.velocity = Vector3.zero;
+            body.angularVelocity = Vector3.zero;
+        }
+        else
+        {
+            playerTransform.SetPositionAndRotation(spawn.position, spawn.rotation);
         }
     }
 
