@@ -6,6 +6,15 @@
             "id": "b579a7d9-39db-423e-96c6-1d2ac689508c",
             "actions": [
                 {
+                    "name": "Sprint",
+                    "type": "Button",
+                    "id": "672f519d-09ab-494d-a198-b0dac4cce9f4",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
+                },
+                {
                     "name": "Move",
                     "type": "Value",
                     "id": "63b1dd4f-2cae-426d-9e76-3ba5c86f2189",
@@ -43,6 +52,17 @@
                 }
             ],
             "bindings": [
+                {
+                    "name": "",
+                    "id": "277dc6fa-1126-4d91-a0c7-4e803db8209a",
+                    "path": "<Keyboard>/leftShift",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "Sprint",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
                 {
                     "name": "",
                     "id": "978bfe49-cc26-4a3d-ab7b-7d7a29327403",

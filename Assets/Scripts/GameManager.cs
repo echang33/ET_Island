@@ -17,6 +17,11 @@ public class GameManager : MonoBehaviour
     // How long to wait before reloading (in seconds)
     public float restartDelay = 2f; 
 
+    [Header("Fall Safeguard")]
+    public bool killOnFall = true;
+    [Tooltip("World-space Y position below which the player dies. Set below the lowest playable floor.")]
+    public float killHeight = -20f;
+
     [Header("Spawn Settings")]
     [Tooltip("Choose the alternate spawn when the scene starts. Set before pressing Play.")]
     public bool useAlternateSpawn;
@@ -25,9 +30,28 @@ public class GameManager : MonoBehaviour
     public Transform normalSpawn;
     public Transform alternateSpawn;
 
+    private bool gameOverStarted;
+    private static bool hasPendingRespawn;
+    private static string pendingScenePath;
+    private static bool pendingAlternateSpawn;
+    private static Vector3 pendingPosition;
+    private static Quaternion pendingRotation;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetRespawnState()
+    {
+        hasPendingRespawn = false;
+        pendingScenePath = null;
+    }
+
     void Start()
     {
         PlacePlayerAtSpawn();
+
+        if (playerLife == null && player != null)
+        {
+            playerLife = player.GetComponent<Life>();
+        }
 
         if (playerLife != null)
         {
@@ -41,13 +65,36 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    private void Update()
+    {
+        if (!killOnFall || gameOverStarted || playerLife == null || Time.timeScale == 0f)
+        {
+            return;
+        }
+
+        Transform playerTransform = player != null ? player : playerLife.transform;
+        if (playerTransform.position.y < killHeight)
+        {
+            // Let Life invoke the same death event used by damage from enemies.
+            playerLife.amount = 0f;
+        }
+    }
+
     private void PlacePlayerAtSpawn()
     {
         Transform playerTransform = player != null ? player : playerLife != null ? playerLife.transform : null;
+        bool restoringRespawn = hasPendingRespawn && pendingScenePath == gameObject.scene.path;
+        if (restoringRespawn)
+        {
+            useAlternateSpawn = pendingAlternateSpawn;
+        }
         Transform spawn = useAlternateSpawn ? alternateSpawn : normalSpawn;
+        Vector3 position = restoringRespawn ? pendingPosition : spawn != null ? spawn.position : Vector3.zero;
+        Quaternion rotation = restoringRespawn ? pendingRotation : spawn != null ? spawn.rotation : Quaternion.identity;
+        hasPendingRespawn = false;
 
         // Keep the scene's existing player position until spawn markers are assigned.
-        if (spawn == null)
+        if (!restoringRespawn && spawn == null)
         {
             if (useAlternateSpawn)
             {
@@ -64,19 +111,37 @@ public class GameManager : MonoBehaviour
 
         if (playerTransform.TryGetComponent<Rigidbody>(out var body))
         {
-            body.position = spawn.position;
-            body.rotation = spawn.rotation;
+            body.position = position;
+            body.rotation = rotation;
             body.velocity = Vector3.zero;
             body.angularVelocity = Vector3.zero;
         }
         else
         {
-            playerTransform.SetPositionAndRotation(spawn.position, spawn.rotation);
+            playerTransform.SetPositionAndRotation(position, rotation);
         }
     }
 
     private void GameOver()
     {
+        if (gameOverStarted)
+        {
+            return;
+        }
+        gameOverStarted = true;
+
+        // Scene reloads restore serialized Inspector values. Carry the selected
+        // marker's pose across this reload, including markers assigned during Play.
+        Transform spawn = useAlternateSpawn ? alternateSpawn : normalSpawn;
+        if (spawn != null)
+        {
+            pendingScenePath = gameObject.scene.path;
+            pendingAlternateSpawn = useAlternateSpawn;
+            pendingPosition = spawn.position;
+            pendingRotation = spawn.rotation;
+            hasPendingRespawn = true;
+        }
+
         // Detach the camera from the player so it doesn't get turned off
         if (Camera.main != null)
         {
