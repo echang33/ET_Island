@@ -31,6 +31,8 @@ public class PlayerMovement : MonoBehaviour {
     public float jumpForce;
 
     [Header("Air Movement")]
+    [Tooltip("Preserve jump momentum with gradual air control. Disable for instant movement and stopping in midair.")]
+    public bool useJumpMomentum = true;
     [Tooltip("How quickly movement keys change horizontal velocity in the air. Zero disables air control.")]
     [Min(0f)] public float airAcceleration = 6f;
     
@@ -179,7 +181,7 @@ public class PlayerMovement : MonoBehaviour {
 
         Vector3 movementDirection = (transform.right * movementValue.x) + (transform.forward * movementValue.y);
         float movementSpeed = speed * (sprinting ? sprintMultiplier : 1f);
-        if (grounded) {
+        if (grounded || !useJumpMomentum) {
             Vector3 movement = movementDirection * movementSpeed;
             rb.velocity = new Vector3(movement.x, rb.velocity.y, movement.z);
         } else if (movementValue.sqrMagnitude > 0.01f) {
