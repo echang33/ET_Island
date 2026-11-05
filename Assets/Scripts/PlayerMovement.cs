@@ -215,6 +215,9 @@ public class PlayerMovement : MonoBehaviour {
             animator.SetBool("isJumping", false);
             Debug.Log("Jumping: False");
         }
+        // assign sprinting boolean for animation
+        sprinting = sprintHeld && !exhausted && stamina > 0f && movementValue.sqrMagnitude > 0.01f;
+        animator.SetBool("isSprinting", sprinting);
     }
 
     private void UpdateSprintParticles() {
