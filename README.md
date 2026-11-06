@@ -83,6 +83,14 @@ Not applicable
 
 ~~We also plan on implementing more types of puzzles. Since we already have a graph UI, this will be easy to expand. For example, we can add finding Hamiltonian paths and minimum vertex cover. We also plan to connect puzzles more directly to progression through the data center. Successfully solving puzzles will allow the player to access previously restricted areas.~~
 
+### Project Part 3: Lighting and VIsual Effects
+
+For the next checkpoint, we plan on implementing various visual effects to make our game feel more realistic. The first includes some sort of death effect when our character touches an obstacle or is shot by the turrets. This could be done by using particle effects and can also extend to successfully completing a puzzle. 
+
+The second would be to add in animations for the movement of our character and for the transition between rooms. We will also experiment with lighting to create a darker, more industrial atmosphere, while using emissive materials to make lasers, security systems, and interactive objects stand out.
+
+Finally, we will continue refining procedural generation by adding environmental assets to generated rooms and improving navigation between rooms, particularly through stairs and ladders.
+
 ## Development
 
 ### Project Checkpoint 1-2:
@@ -145,17 +153,36 @@ There are many configurable parameters going into the generation algorithm descr
 
 ### Project Part 3: Visual Effects
 
-For the next checkpoint, we plan on implementing various visual effects to make our game feel more realistic. The first includes some sort of death effect when our character touches an obstacle or is shot by the turrets. This could be done by using particle effects and can also extend to successfully completing a puzzle. 
+**General Gameplay Updates**
+- A toggle between the handmade room and the proceduraly generated room was added to switch the spawn location during testing. This can be found in a checkbox under the "Game Manager" component of the "Game Manager" object, as shown below. "Alternate spawn" refers to the procedurally generated room.
+- Parkour was added in the training room. The player must perform parkour in order to evade the turrets.
+- Laser obstacles now move up/down or left/right. Configurable in the inspector. 
 
-The second would be to add in animations for the movement of our character and for the transition between rooms. We will also experiment with lighting to create a darker, more industrial atmosphere, while using emissive materials to make lasers, security systems, and interactive objects stand out.
+![spawn toggle](./Screenshots/alternate_spawn.png)
+![parkour](./Screenshots/parkour.png)
 
-Finally, we will continue refining procedural generation by adding environmental assets to generated rooms and improving navigation between rooms, particularly through stairs and ladders.
+**Player Movement:** 
+- A "sprint" mechanism was added. The player acivates sprinting by holding down left shift. There is a 5 second "stamina" bar for sprinting, which begins regeneration once the player has stopped sprinting for 1 second.
+
+![sprint](./Screenshots/sprint.png)
+
+**Visual Effects**
+- Walking and sprinting animations were added to Chi Poh Le. 
+- Sprinting has a particle trail effect to make it obvious that the player is sprinting.
+- Lasers now have a slight "spark" effect, where glowing particles will float up from the lasers periodically.
+- Added muzzle flash to turrets 
+
+![laser sparkle](./Screenshots/laser_sparkle.png)
+
+
+**Procedural Generation**
 
 ## Instructions for Testing the Project
 
 - Open the Unity project and load the scene `TestLevel`.
 - Press the Play button in the Unity Editor to start the game.
 - Use **WASD** to move the player and **Space** to jump.
+- Hold **Left Shift** to sprint. The green bar represents sprint stamina; stop sprinting for 1 second to  regenerate.
 - Avoid laser beams and enemy turrets.
 - Touch or approach the puzzle terminal to activate a puzzle.
 - Enter your answer into the text field and submit it using `[submission control]`.
