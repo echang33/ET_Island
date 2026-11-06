@@ -22298,18 +22298,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 6ecd91e2f5f40b04bb843988c88645ca, type: 3}
---- !u!114 &806980641 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 8264045815687608237, guid: 802c726eb43575a40ba341875e3750fe,
-    type: 3}
-  m_PrefabInstance: {fileID: 1561227733}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5d7e857c49b944242b856d67fac4e19e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1001 &808278875
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -29857,9 +29845,17 @@ MonoBehaviour:
   seed: 42
   removePercent: 0.4
   rampMaterial: {fileID: 2100000, guid: 1ece3b589875df947bea02a53b9a61ed, type: 2}
-  wallMaterial: {fileID: 2100000, guid: 1ece3b589875df947bea02a53b9a61ed, type: 2}
+  wallMaterials:
+  - {fileID: 2100000, guid: 1ece3b589875df947bea02a53b9a61ed, type: 2}
+  - {fileID: 2100000, guid: e5f276785176fc64a8b1f5c941573026, type: 2}
+  - {fileID: 2100000, guid: 35dd2cef514d6274eb3f819694b0bf33, type: 2}
+  floorMaterials:
+  - {fileID: 2100000, guid: 1ece3b589875df947bea02a53b9a61ed, type: 2}
+  - {fileID: 2100000, guid: e5f276785176fc64a8b1f5c941573026, type: 2}
+  - {fileID: 2100000, guid: 35dd2cef514d6274eb3f819694b0bf33, type: 2}
   rampPhysicMaterial: {fileID: 13400000, guid: c24ab95ed3ef3b24886ac491ff85fe18, type: 2}
   wallPhysicMaterial: {fileID: 13400000, guid: 7c95c233f1d5e554c8462098211f3c1e, type: 2}
+  textureScale: 1
   roomLightPrefab: {fileID: 2516595083928065413, guid: 85ec8c2f2ef003545a8d3f8e86853c9a,
     type: 3}
   coreLightPrefab: {fileID: 5135327680834152236, guid: 21dd11a86a229054dbb982e8b5f31cc7,
@@ -40312,11 +40308,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 727504504}
     m_Modifications:
-    - target: {fileID: -7991164200989940085, guid: 802c726eb43575a40ba341875e3750fe,
-        type: 3}
-      propertyPath: m_Enabled
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 5767777984104726516, guid: 802c726eb43575a40ba341875e3750fe,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -40371,42 +40362,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: Turret (5)
-      objectReference: {fileID: 0}
-    - target: {fileID: 7869194391718946726, guid: 802c726eb43575a40ba341875e3750fe,
-        type: 3}
-      propertyPath: prefab
-      value: 
-      objectReference: {fileID: 5821808581030441789, guid: 6dff556f273eb404ba27ef2706be49dd,
-        type: 3}
-    - target: {fileID: 7869194391718946726, guid: 802c726eb43575a40ba341875e3750fe,
-        type: 3}
-      propertyPath: shootPoint
-      value: 
-      objectReference: {fileID: 2101023392}
-    - target: {fileID: 7869194391718946726, guid: 802c726eb43575a40ba341875e3750fe,
-        type: 3}
-      propertyPath: sightSensor
-      value: 
-      objectReference: {fileID: 806980641}
-    - target: {fileID: 8264045815687608237, guid: 802c726eb43575a40ba341875e3750fe,
-        type: 3}
-      propertyPath: angle
-      value: 45
-      objectReference: {fileID: 0}
-    - target: {fileID: 8264045815687608237, guid: 802c726eb43575a40ba341875e3750fe,
-        type: 3}
-      propertyPath: distance
-      value: 20
-      objectReference: {fileID: 0}
-    - target: {fileID: 8264045815687608237, guid: 802c726eb43575a40ba341875e3750fe,
-        type: 3}
-      propertyPath: detectedObject
-      value: 
-      objectReference: {fileID: 565046422734581854}
-    - target: {fileID: 8264045815687608237, guid: 802c726eb43575a40ba341875e3750fe,
-        type: 3}
-      propertyPath: objectsLayers.m_Bits
-      value: 64
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -42500,7 +42455,7 @@ MonoBehaviour:
   restartDelay: 2
   killOnFall: 1
   killHeight: -20
-  useAlternateSpawn: 1
+  useAlternateSpawn: 0
   player: {fileID: 565046422734581846}
   normalSpawn: {fileID: 16920974}
   alternateSpawn: {fileID: 1385896678}
@@ -51725,12 +51680,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4185291912934451808, guid: 18477a32d0d4d834f8bf3c38fbfb906c,
     type: 3}
   m_PrefabInstance: {fileID: 2090560082}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &2101023392 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 2195586885681173686, guid: 802c726eb43575a40ba341875e3750fe,
-    type: 3}
-  m_PrefabInstance: {fileID: 1561227733}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &2108577776
 PrefabInstance:

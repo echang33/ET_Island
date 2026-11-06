@@ -113,11 +113,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   speed: 10
+  sprintMultiplier: 1.5
+  sprintDuration: 5
+  staminaRegenDelay: 1
+  staminaRefillTime: 5
+  sprintBar: {fileID: 0}
+  sprintParticles: {fileID: 0}
   rotationSpeed: 1
   jumpForce: 15
+  useJumpMomentum: 1
+  airAcceleration: 6
+  cameraTarget: {fileID: 0}
   gravityMultiplier: 3
   minPitch: 0
   maxPitch: 60
+  maxSlopeAngle: 85
 --- !u!136 &8670813405392257021
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -180,7 +190,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9e81a0ddc791a4448b5483e61b9c24dc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  amount: 100
+  amount: 1000000
   onDeath:
     m_PersistentCalls:
       m_Calls: []

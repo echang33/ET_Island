@@ -83,13 +83,23 @@ Not applicable
 
 ~~We also plan on implementing more types of puzzles. Since we already have a graph UI, this will be easy to expand. For example, we can add finding Hamiltonian paths and minimum vertex cover. We also plan to connect puzzles more directly to progression through the data center. Successfully solving puzzles will allow the player to access previously restricted areas.~~
 
-### Project Part 3: Lighting and VIsual Effects
+### Project Part 3: Lighting and Visual Effects
 
-For the next checkpoint, we plan on implementing various visual effects to make our game feel more realistic. The first includes some sort of death effect when our character touches an obstacle or is shot by the turrets. This could be done by using particle effects and can also extend to successfully completing a puzzle. 
+~~For the next checkpoint, we plan on implementing various visual effects to make our game feel more realistic.~~ The first includes some sort of death effect when our character touches an obstacle or is shot by the turrets. This could be done by using particle effects and can also extend to successfully completing a puzzle. 
 
-The second would be to add in animations for the movement of our character and for the transition between rooms. We will also experiment with lighting to create a darker, more industrial atmosphere, while using emissive materials to make lasers, security systems, and interactive objects stand out.
+~~The second would be to add in animations for the movement of our character and for the transition between rooms. We will also experiment with lighting to create a darker, more industrial atmosphere, while using emissive materials to make lasers, security systems, and interactive objects stand out.~~
 
-Finally, we will continue refining procedural generation by adding environmental assets to generated rooms and improving navigation between rooms, particularly through stairs and ladders.
+~~Finally, we will continue refining procedural generation by adding environmental assets to generated rooms and improving navigation between rooms, particularly through stairs~~ and ladders.
+
+- We didn't get to implementing ladders for the procedural generation. We improved many other aspects of procedural generation (such as adding slopes and fixing textures), so we ran out of time to do ladders.
+
+### Project Checkpoint 3-4: Sound, UI, and Animation
+
+For the next checkpoint, we will add background music and sound effects for running, jumping, turrets shooting, etc. 
+
+Regarding procedural generation, we will add doors between the holes connecting rooms, and procedurally generate puzzles in each room which open those doors when solved. We plan on animating the opening of those doors. We also plan on procedurally generating ladders to climb up between rooms, and making the central killswitch room accessible via doors from a few select rooms.
+
+There are also some difficulties in procedural generation. Currently, there is no guarantee that generated slopes do not collide with each other, or that the generated slopes don't block other openings. As we procedurally generate more and more objects into each room, this will only become more difficult. We will spend some time researching approaches to get around this.
 
 ## Development
 
@@ -136,7 +146,7 @@ AI was implemented for the enemy turrets. It uses a FSM design as described in t
 
 When the player fails the puzzle, the turrets get buffed range and firing speed, as a punishment for the player. When the player beats the puzzle, the turrets are deactivated and any live bullets in the air are deleted, giving the player immunity.
 
-Lastly (but not least), procedural generation was also partially implemented to generate the "labryinth" like datacenter we have been envisioning. The algorithm uses binary space partitioning to recursively split a rectangular region by one of the 3 axis aligned planes. The splitting occurs until a region can no longer be split on any axis without going below a minimum size along one dimension. Then, a graph is built where nodes are the leaf regions, and an edge goes between regions that share an overlapping face exceeding certain dimensions. 
+Lastly (but not least), procedural generation was also partially implemented to generate the "labryinth" like datacenter we have been envisioning. The algorithm uses binary space partitioning to recursively split a rectangular region by one of the 3 axis aligned planes, inspired by https://www.roguebasin.com/index.php/Basic_BSP_Dungeon_generation (which used a similar technique for 2D dungeon generation). The splitting occurs until a region can no longer be split on any axis without going below a minimum size along one dimension. Then, a graph is built where nodes are the leaf regions, and an edge goes between regions that share an overlapping face exceeding certain dimensions. 
 
 Afterwards, a fraction of the rooms (that do not disconnect the remaining graph) are randomly removed. This creates a more random labryinth like look. For the remaining rooms, openings of a fixed size are generated randomly within the shared face for adjacent rooms. These act like doors (or holes in the ceiling / floor) to allow the player to navigate the rooms. Currently they are not so accessible; in the future, we will add stairs and ladders to make all of these openings traversable.
 
@@ -163,6 +173,8 @@ There are many configurable parameters going into the generation algorithm descr
 
 **Player Movement:** 
 - A "sprint" mechanism was added. The player acivates sprinting by holding down left shift. There is a 5 second "stamina" bar for sprinting, which begins regeneration once the player has stopped sprinting for 1 second.
+- The 3rd person camera was overhauled to use Unity's Cinemachine package, which provides much more fluid camera tracking. It also has support for preventing the camera from clipping through walls, which is nice.
+- The player is now able to jump while on slopes as well, allowing navigation through the procedurally generated rooms.
 
 ![sprint](./Screenshots/sprint.png)
 
@@ -178,8 +190,18 @@ There are many configurable parameters going into the generation algorithm descr
 Muzzle flash demo: https://github.com/user-attachments/assets/e1ef4e41-37aa-485d-88e6-a7f49b30ab83
 
 
-
 **Procedural Generation**
+- The procedural generation algorithm was modified so that after the initial BSP generation, rooms on the outside surface and in the center are removed, leaving a rectangular "ring" of rooms. The hollowed out center forms one massive room, with a central glowing object in the middle (representing the killswitch). Currently the central room is inaccessible, eventually we will add a few doors from the surrounding rooms. 
+- Slopes were also procedurally generated to act as staircases between rooms. 
+- Previously, texture coordinates in the procedurally generated rooms were messed up, because each wall is partitioned into many smaller rectangular regions (in order to go around the holes). Now, UV coordinates for each wall piece are calculated relative to one corner of the entire face, making textures consistent. This was tested by adding textures to walls, but after testing we removed the textures because they looked ugly. In the future we will look for more fitting wall textures.
+- Added support for having multiple wall / floor materials, which are picked randomly for each room. Currently, we just made 3 metallic materials of differing colors. In the future, we will find better wall materials for this.
+- Spotlights are also now procedurally generated at the top of each room.
+
+![central room](./Screenshots/central_room.png)
+![slopes](./Screenshots/procedural_slopes.png)
+
+**Post-processing Effects**
+- Post-processing effects were also added. Currently, we just added a bloom filter and vignette effects. The bloom filter makes the central killswitch light look more mysterious since it gives it a glow effect.
 
 ## Instructions for Testing the Project
 

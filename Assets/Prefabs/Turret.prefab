@@ -40,7 +40,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5767777984104726516}
-  - component: {fileID: -7991164200989940085}
   m_Layer: 0
   m_Name: Turret
   m_TagString: Untagged
@@ -67,22 +66,6 @@ Transform:
   - {fileID: 8994548061357808540}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0.011, y: 0.8, z: -0.8}
---- !u!114 &-7991164200989940085
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5974946477534926687}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aa886bf36a2edb540bc789d2ad7e75d1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  prefab: {fileID: 5821808581030441789, guid: 6dff556f273eb404ba27ef2706be49dd, type: 3}
-  shootPoint: {fileID: 2195586885681173686}
-  muzzle: {fileID: 7415451393390518786}
-  fireRate: 0.5
 --- !u!1 &9098044504998593048
 GameObject:
   m_ObjectHideFlags: 0
@@ -132,7 +115,7 @@ MonoBehaviour:
   angle: 30
   objectsLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 64
   obstaclesLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -150,10 +133,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   currentState: 0
   lastShootTime: 0
-  sightSensor: {fileID: 0}
-  prefab: {fileID: 0}
-  shootPoint: {fileID: 0}
-  muzzleFlash: {fileID: 0}
+  sightSensor: {fileID: 8264045815687608237}
+  prefab: {fileID: 5821808581030441789, guid: 6dff556f273eb404ba27ef2706be49dd, type: 3}
+  shootPoint: {fileID: 2195586885681173686}
+  muzzleFlash: {fileID: 7415451393390518786}
   fireRate: 2
   superFireRateMultiplier: 5
   superProjectileSpeedMultiplier: 3
