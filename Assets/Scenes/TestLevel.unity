@@ -29839,19 +29839,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80fdaac9e39ed5246ad6888e28df290a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  spawn: {fileID: 1385896678}
   boundsMin: {x: 0, y: 0, z: 0}
-  boundsMax: {x: 300, y: 240, z: 300}
+  boundsMax: {x: 400, y: 320, z: 400}
   outerRemoveBorder: 0.1
   innerRemoveBorder: 0.25
-  minWidth: 20
+  minWidth: 30
   minHeight: 16
-  minDepth: 20
+  minDepth: 30
   adjacencyEpsilon: 0.001
   minFaceOverlap: 5
   shrinkageBorder: 0
   wallThickness: 0.2
   openingSize: {x: 3, y: 3}
-  rampLength: 5
+  rampLength: 8
   minRampHeight: 0.5
   seed: 42
   removePercent: 0.4
@@ -36010,7 +36011,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1385896678}
   m_Layer: 0
-  m_Name: LabarynthSpawn
+  m_Name: LabyrinthSpawn
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -36025,7 +36026,7 @@ Transform:
   m_GameObject: {fileID: 1385896677}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 37, y: 192.77, z: -40}
+  m_LocalPosition: {x: 30, y: 192.77, z: -100}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -42499,7 +42500,7 @@ MonoBehaviour:
   restartDelay: 2
   killOnFall: 1
   killHeight: -20
-  useAlternateSpawn: 0
+  useAlternateSpawn: 1
   player: {fileID: 565046422734581846}
   normalSpawn: {fileID: 16920974}
   alternateSpawn: {fileID: 1385896678}

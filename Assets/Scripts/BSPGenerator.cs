@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class BSPGenerator : MonoBehaviour {
+    public Transform spawn;
+
     [Header("Bounds")]
     public Vector3 boundsMin = Vector3.zero;
     public Vector3 boundsMax = new Vector3(200f, 100f, 200f);
@@ -36,9 +38,11 @@ public class BSPGenerator : MonoBehaviour {
 
     [Header("Materials")]
     public Material rampMaterial;
-    public Material wallMaterial;
+    public List<Material> wallMaterials;
+    public List<Material> floorMaterials;
     public PhysicMaterial rampPhysicMaterial;
     public PhysicMaterial wallPhysicMaterial;
+    public float textureScale = 1.0f;
 
     [Header("Lights")]
     public GameObject roomLightPrefab;
@@ -48,10 +52,14 @@ public class BSPGenerator : MonoBehaviour {
     public struct Region {
         public Vector3 Min;
         public Vector3 Max;
+        public Material FloorMat;
+        public Material WallMat;
 
         public Region(Vector3 min, Vector3 max) {
             Min = min;
             Max = max;
+            FloorMat = new Material(Shader.Find("Standard"));
+            WallMat = new Material(Shader.Find("Standard"));
         }
 
         public Vector3 Size => Max - Min;
@@ -131,6 +139,17 @@ public class BSPGenerator : MonoBehaviour {
         GameObject coreLight = Instantiate(coreLightPrefab);
         coreLight.transform.SetParent(genRoot, false);
         coreLight.transform.localPosition = (boundsMin + boundsMax) * 0.5f;
+
+        Region corner = leafRegions[0];
+        for (int i = 1; i < leafRegions.Count; i++) {
+            Region cur = leafRegions[i];
+            float curVal = cur.Center[0] + cur.Center[1] + cur.Center[2];
+            float prvVal = corner.Center[0] + corner.Center[1] + corner.Center[2];
+            if (curVal > prvVal) {
+                corner = cur;
+            }
+        }
+        spawn.position = genRoot.TransformPoint(corner.Center);
     }
 
     // Depth first search to check connectivity
@@ -290,6 +309,10 @@ public class BSPGenerator : MonoBehaviour {
 
         // No splits left means this is a final leaf region
         if (available.Count == 0) {
+            // Randomly pick floor and wall materials
+            region.FloorMat = floorMaterials[rng.Next(floorMaterials.Count)];
+            region.WallMat = wallMaterials[rng.Next(wallMaterials.Count)];
+        
             leafRegions.Add(region);
             return;
         }
@@ -454,6 +477,7 @@ public class BSPGenerator : MonoBehaviour {
         float vMin = roomMin[v], vMax = roomMax[v];
 
         Region region = leafRegions[regionIndex];
+        Material mat = (axis == 1 ? region.FloorMat : region.WallMat);
 
         // Find all edges that connect to this face of this region.
         List<Edge> faceEdges = new List<Edge>();
@@ -471,7 +495,7 @@ public class BSPGenerator : MonoBehaviour {
 
         // No neighboring room on this face: draw a solid wall.
         if (faceEdges.Count == 0) {
-            CreateWallPanel(axis, plane, uMin, uMax, vMin, vMax);
+            CreateWallPanel(axis, plane, uMin, uMax, vMin, vMax, uMin, vMin, mat);
             return;
         }
 
@@ -513,13 +537,13 @@ public class BSPGenerator : MonoBehaviour {
                 float holeEnd = Mathf.Clamp(interval.max, vMin, vMax);
 
                 if (holeStart > cursor) {
-                    CreateWallPanel(axis, plane, left, right, cursor, holeStart);
+                    CreateWallPanel(axis, plane, left, right, cursor, holeStart, uMin, vMin, mat);
                 }
                 cursor = Mathf.Max(cursor, holeEnd);
             }
 
             if (cursor < vMax) {
-                CreateWallPanel(axis, plane, left, right, cursor, vMax);
+                CreateWallPanel(axis, plane, left, right, cursor, vMax, uMin, vMin, mat);
             }
         }
 
@@ -575,6 +599,7 @@ public class BSPGenerator : MonoBehaviour {
             rampMesh.height = rampHeight;
             rampMesh.rotationY = rotationY;
             rampMesh.material = rampMaterial;
+            rampMesh.textureScale = textureScale;
             rampMesh.Generate();
 
             MeshCollider meshCollider = ramp.AddComponent<MeshCollider>();
@@ -585,7 +610,7 @@ public class BSPGenerator : MonoBehaviour {
 
     // Create a wall panel (3D cube primitive in Unity) that is normal to axis, with the other two dimensions
     // specified by [uMin, uMax] and [vMin, vMax]
-    private void CreateWallPanel(int axis, float plane, float uMin, float uMax, float vMin, float vMax) {
+    private void CreateWallPanel(int axis, float plane, float uMin, float uMax, float vMin, float vMax, float faceUMin, float faceVMin, Material mat) {
         if (uMax <= uMin || vMax <= vMin) return;
 
         GetFaceAxes(axis, out int u, out int v);
@@ -607,11 +632,34 @@ public class BSPGenerator : MonoBehaviour {
         wall.transform.localPosition = center;
         wall.transform.localRotation = Quaternion.identity;
         wall.transform.localScale = size;
-        wall.GetComponent<Collider>().material = wallPhysicMaterial;
 
-        if (wallMaterial != null &&
-            wall.TryGetComponent<Renderer>(out Renderer renderer)) {
-            renderer.sharedMaterial = wallMaterial;
+        // Modify the cube's UV coordinates, so textures map across entire wall face (rather than per wall piece)
+        MeshFilter filter = wall.GetComponent<MeshFilter>();
+        Mesh mesh = Instantiate(filter.sharedMesh);
+
+        Vector3[] vertices = mesh.vertices;
+        Vector3[] normals = mesh.normals;
+        Vector2[] uvs = new Vector2[vertices.Length];
+        for (int i = 0; i < vertices.Length; i++) {
+            int normalAxis = Mathf.Abs(normals[i].x) > 0.5f ? 0 : (Mathf.Abs(normals[i].y) > 0.5f ? 1 : 2);
+
+            // Convert the cube-local vertex into room-local coordinates.
+            Vector3 position = Vector3.Scale(vertices[i], size) + center;
+            if (normalAxis == axis) {
+                // These are the two wall sides, UV coordinates should be relative to entire wall face
+                uvs[i] = new Vector2(position[u] - faceUMin, position[v] - faceVMin);
+            } else {
+                // These are thin sides of the wall
+                GetFaceAxes(axis, out int curU, out int curV);
+                uvs[i] = new Vector2(position[curU], position[curV]);
+            }
+            uvs[i] = uvs[i] / textureScale;
         }
+
+        mesh.uv = uvs;
+        filter.sharedMesh = mesh;
+
+        wall.GetComponent<Collider>().material = wallPhysicMaterial;
+        wall.GetComponent<Renderer>().sharedMaterial = mat;
     }
 }
