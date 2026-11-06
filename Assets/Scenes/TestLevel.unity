@@ -5171,6 +5171,12 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 236157539}
   m_PrefabAsset: {fileID: 0}
+--- !u!198 &239549184 stripped
+ParticleSystem:
+  m_CorrespondingSourceObject: {fileID: 7415451393390518786, guid: 802c726eb43575a40ba341875e3750fe,
+    type: 3}
+  m_PrefabInstance: {fileID: 1197152550228320528}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &239979034
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -53083,6 +53089,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Turret
       objectReference: {fileID: 0}
+    - target: {fileID: 7415451393390518786, guid: 802c726eb43575a40ba341875e3750fe,
+        type: 3}
+      propertyPath: playOnAwake
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7869194391718946726, guid: 802c726eb43575a40ba341875e3750fe,
         type: 3}
       propertyPath: prefab
@@ -53094,6 +53105,11 @@ PrefabInstance:
       propertyPath: shootPoint
       value: 
       objectReference: {fileID: 1044611702}
+    - target: {fileID: 7869194391718946726, guid: 802c726eb43575a40ba341875e3750fe,
+        type: 3}
+      propertyPath: muzzleFlash
+      value: 
+      objectReference: {fileID: 239549184}
     - target: {fileID: 7869194391718946726, guid: 802c726eb43575a40ba341875e3750fe,
         type: 3}
       propertyPath: sightSensor

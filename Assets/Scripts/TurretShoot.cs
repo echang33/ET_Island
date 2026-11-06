@@ -5,7 +5,7 @@ using UnityEngine;
 public class TurretShoot : MonoBehaviour {
     public GameObject prefab;
     public GameObject shootPoint;
-    
+    public ParticleSystem muzzle;
     // How many seconds to wait between each shot
     public float fireRate = 2f; 
     
@@ -26,5 +26,6 @@ public class TurretShoot : MonoBehaviour {
 
     public void OnFire() {
         GameObject clone = Instantiate(prefab, shootPoint.transform.position, shootPoint.transform.rotation);
+        //muzzle.Play();
     }
 }
