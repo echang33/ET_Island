@@ -7,23 +7,44 @@ public class RampMesh : MonoBehaviour {
     public float width = 2f;
     public float length = 3f;
     public float height = 1.5f;
+    public float textureScale = 1f;
 
     public float rotationY = 0f;
     public Material material;
 
-    [ContextMenu("Generate Ramp")]
     public void Generate() {
         Mesh mesh = new Mesh();
         mesh.name = "Ramp";
 
         // Ramp rises along -Z axis.
         Vector3[] vertices = {
-            new Vector3(-width / 2, 0, -length / 2), // 0: near left
-            new Vector3(width / 2, 0, -length / 2),  // 1: near right
-            new Vector3(-width / 2, 0, length / 2), // 2: far left
-            new Vector3(width / 2, 0, length / 2), // 3: far right
-            new Vector3(-width / 2, height, length / 2), // 4: far top left
-            new Vector3(width / 2, height, length / 2) // 5: far top right
+            // Bottom
+            new Vector3(-width / 2, 0, -length / 2), // 0
+            new Vector3(width / 2, 0, -length / 2),  // 1
+            new Vector3(-width / 2, 0, length / 2),  // 2
+            new Vector3(width / 2, 0, length / 2),   // 3
+
+            // Left side
+            new Vector3(-width / 2, 0, -length / 2), // 4
+            new Vector3(-width / 2, 0, length / 2),  // 5
+            new Vector3(-width / 2, height, length / 2), // 6
+
+            // Right side
+            new Vector3(width / 2, 0, -length / 2),  // 7
+            new Vector3(width / 2, height, length / 2),  // 8
+            new Vector3(width / 2, 0, length / 2),  // 9
+
+            // Sloped top
+            new Vector3(-width / 2, 0, -length / 2), // 10
+            new Vector3(-width / 2, height, length / 2), // 11
+            new Vector3(width / 2, 0, -length / 2),  // 12
+            new Vector3(width / 2, height, length / 2),  // 13
+
+            // Far end
+            new Vector3(-width / 2, 0, length / 2),  // 14
+            new Vector3(width / 2, 0, length / 2),   // 15
+            new Vector3(-width / 2, height, length / 2), // 16
+            new Vector3(width / 2, height, length / 2)   // 17
         };
 
         int[] triangles = {
@@ -32,22 +53,58 @@ public class RampMesh : MonoBehaviour {
             1, 3, 2,
 
             // Left side
-            0, 2, 4,
+            4, 5, 6,
 
             // Right side
-            1, 5, 3,
+            7, 8, 9,
 
             // Sloped top
-            0, 4, 1,
-            1, 4, 5,
+            10, 11, 12,
+            12, 11, 13,
 
             // Far end
-            2, 3, 4,
-            3, 5, 4
+            14, 15, 16,
+            15, 17, 16
         };
+
+        float slopeLength = Mathf.Sqrt(length * length + height * height);
+        Vector2[] uvs = {
+            // Bottom: width x length
+            new Vector2(0, 0),
+            new Vector2(width, 0),
+            new Vector2(0, length),
+            new Vector2(width, length),
+
+            // Left side: length x height
+            new Vector2(0, 0),
+            new Vector2(length, 0),
+            new Vector2(length, height),
+
+            // Right side: length x height
+            new Vector2(0, 0),
+            new Vector2(length, height),
+            new Vector2(length, 0),
+
+            // Sloped top: width x sloped length
+            new Vector2(0, 0),
+            new Vector2(0, slopeLength),
+            new Vector2(width, 0),
+            new Vector2(width, slopeLength),
+
+            // Far end: width x height
+            new Vector2(0, 0),
+            new Vector2(width, 0),
+            new Vector2(0, height),
+            new Vector2(width, height)
+        };
+        for (int i = 0; i < uvs.Length; i++) {
+            uvs[i] = uvs[i] / textureScale;
+        }
 
         mesh.vertices = vertices;
         mesh.triangles = triangles;
+        mesh.uv = uvs;
+
         mesh.RecalculateNormals();
         mesh.RecalculateBounds();
 
@@ -58,6 +115,7 @@ public class RampMesh : MonoBehaviour {
         if (material != null) {
             renderer.sharedMaterial = material;
         }
+
         transform.localRotation = Quaternion.Euler(0, rotationY, 0);
     }
 }
