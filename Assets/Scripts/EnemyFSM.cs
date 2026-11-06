@@ -10,7 +10,7 @@ public class EnemyFSM : MonoBehaviour
     public Sight sightSensor;
     public GameObject prefab;
     public GameObject shootPoint;
-
+    public ParticleSystem muzzleFlash;
     public float fireRate = 2f;
 
     [Header("Super Mode")]
@@ -82,7 +82,6 @@ public class EnemyFSM : MonoBehaviour
         }
         LookTo(sightSensor.detectedObject.transform.position);
         Shoot();
-
     }
 
     void Shoot()
@@ -92,6 +91,7 @@ public class EnemyFSM : MonoBehaviour
         if (timeSinceLastShoot > shotInterval)
         {
             lastShootTime = Time.time;
+            muzzleFlash.Play();
             GameObject projectile = Instantiate(prefab, shootPoint.transform.position, shootPoint.transform.rotation);
             if (IsSuperMode && projectile.TryGetComponent<ProjectileMovement>(out var movement))
             {
