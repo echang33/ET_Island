@@ -175,6 +175,10 @@ There are many configurable parameters going into the generation algorithm descr
 ![laser sparkle](./Screenshots/laser_sparkle.png)
 
 
+Muzzle flash demo: https://github.com/user-attachments/assets/e1ef4e41-37aa-485d-88e6-a7f49b30ab83
+
+
+
 **Procedural Generation**
 
 ## Instructions for Testing the Project
