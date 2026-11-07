@@ -26,7 +26,7 @@ RenderSettings:
   m_AmbientIntensity: 1
   m_AmbientMode: 0
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 10304, guid: 0000000000000000f000000000000000, type: 0}
+  m_SkyboxMaterial: {fileID: 2100000, guid: 19c269d5a659e3644ac416945a061cd5, type: 2}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -11292,7 +11292,7 @@ GameObject:
   - component: {fileID: 498564842}
   - component: {fileID: 498564841}
   m_Layer: 0
-  m_Name: Particle System
+  m_Name: SprintParticle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -52876,6 +52876,17 @@ PrefabInstance:
       propertyPath: m_Name
       value: ChiPohLe
       objectReference: {fileID: 0}
+    - target: {fileID: 7014546584512229190, guid: 6b6c984542b35d84685623042cedec8a,
+        type: 3}
+      propertyPath: amount
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 7014546584512229190, guid: 6b6c984542b35d84685623042cedec8a,
+        type: 3}
+      propertyPath: deathEffectPrefab
+      value: 
+      objectReference: {fileID: 9002935936944676758, guid: ae10623bea0921f4fa8deda77c89b0c2,
+        type: 3}
     - target: {fileID: 7313539014586466404, guid: 6b6c984542b35d84685623042cedec8a,
         type: 3}
       propertyPath: maxPitch

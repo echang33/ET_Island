@@ -183,6 +183,7 @@ There are many configurable parameters going into the generation algorithm descr
 - Sprinting has a particle trail effect to make it obvious that the player is sprinting.
 - Lasers now have a slight "spark" effect, where glowing particles will float up from the lasers periodically.
 - Added muzzle flash to turrets 
+- Added a death particle effect
 
 ![laser sparkle](./Screenshots/laser_sparkle.png)
 
