@@ -1,6 +1,8 @@
 /*
-Team members: Ethan Chang, Ryan Wu, Steven tan
-*/
+ * GameManager.cs
+ * Team members: Ethan Chang, Ryan Wu, Steven Tan
+ * Purpose: Places the player at the selected spawn, detects falls, and reloads the scene after death.
+ */
 
 using System.Collections;
 using UnityEngine;
@@ -9,9 +11,10 @@ using TMPro; // Required to use TextMeshPro UI
 
 public class GameManager : MonoBehaviour
 {
-    public Life playerLife; 
+    [Header("Player Health")]
+    public Life playerLife;
     
-    // The UI text that will appear when you die
+    [Header("Game Over UI and Restart")]
     public TextMeshProUGUI gameOverText;
     
     // How long to wait before reloading (in seconds)
@@ -31,6 +34,8 @@ public class GameManager : MonoBehaviour
     public Transform alternateSpawn;
 
     private bool gameOverStarted;
+    // Store values rather than scene references: markers are destroyed by LoadScene.
+    // This pending snapshot is consumed once by the next matching scene instance.
     private static bool hasPendingRespawn;
     private static string pendingScenePath;
     private static bool pendingAlternateSpawn;
@@ -40,6 +45,7 @@ public class GameManager : MonoBehaviour
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetRespawnState()
     {
+        // Also reset when entering Play with domain reload disabled in the Unity Editor.
         hasPendingRespawn = false;
         pendingScenePath = null;
     }
@@ -154,7 +160,7 @@ public class GameManager : MonoBehaviour
             gameOverText.gameObject.SetActive(true);
         }
 
-        // 3. Start a timer to reload the scene instead of doing it instantly
+        // Give the game-over text and independently spawned death particles time to display.
         StartCoroutine(ReloadSceneRoutine());
     }
 

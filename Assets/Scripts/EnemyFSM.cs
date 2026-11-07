@@ -1,17 +1,31 @@
+/*
+ * EnemyFSM.cs
+ * Team members: Ethan Chang, Ryan Wu, Steven Tan
+ * Purpose: Controls turret detection, aiming, firing cooldowns, and the stronger mode caused by puzzle failure.
+ */
+
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class EnemyFSM : MonoBehaviour
 {
     public enum EnemyState { Idle, AttackPlayer}
+    [Header("Turret State")]
     public EnemyState currentState;
     public float lastShootTime;
+    [Header("Target Detection")]
     public Sight sightSensor;
-    public GameObject prefab;
+    [Header("Projectile and Effects")]
+    [FormerlySerializedAs("prefab")]
+    public GameObject projectilePrefab;
     public GameObject shootPoint;
     public ParticleSystem muzzleFlash;
-    public float fireRate = 2f;
+    [Header("Firing Timing")]
+    [Tooltip("Seconds between shots. Lower values fire faster.")]
+    [FormerlySerializedAs("fireRate")]
+    public float shotIntervalSeconds = 2f;
 
     [Header("Super Mode")]
     [Tooltip("How many times faster this turret fires after puzzle failure.")]
@@ -54,7 +68,7 @@ public class EnemyFSM : MonoBehaviour
         lastShootTime = Time.time;
     }
 
-    // Update is called once per frame
+    // Detection is owned by Sight; this state machine decides when to aim and fire.
     void Update() {
         // If turret is not active, then keep in Idle state
         if (!activated) {
@@ -87,12 +101,12 @@ public class EnemyFSM : MonoBehaviour
     void Shoot()
     {
         var timeSinceLastShoot = Time.time - lastShootTime;
-        float shotInterval = IsSuperMode ? fireRate / Mathf.Max(1f, superFireRateMultiplier) : fireRate;
+        float shotInterval = IsSuperMode ? shotIntervalSeconds / Mathf.Max(1f, superFireRateMultiplier) : shotIntervalSeconds;
         if (timeSinceLastShoot > shotInterval)
         {
             lastShootTime = Time.time;
             muzzleFlash.Play();
-            GameObject projectile = Instantiate(prefab, shootPoint.transform.position, shootPoint.transform.rotation);
+            GameObject projectile = Instantiate(projectilePrefab, shootPoint.transform.position, shootPoint.transform.rotation);
             if (IsSuperMode && projectile.TryGetComponent<ProjectileMovement>(out var movement))
             {
                 movement.speed *= Mathf.Max(1f, superProjectileSpeedMultiplier);
@@ -102,6 +116,7 @@ public class EnemyFSM : MonoBehaviour
 
     void LookTo(Vector3 targetPosition)
     {
+        // Rotate only the parent turret's yaw; ignore the target's height.
         Vector3 directionToPosition = Vector3.Normalize(targetPosition - transform.parent.position);
         directionToPosition.y = 0;
         transform.parent.forward = directionToPosition;

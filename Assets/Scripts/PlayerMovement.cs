@@ -1,6 +1,8 @@
 /*
-Team members: Ethan Chang, Ryan Wu, Steven tan
-*/
+ * PlayerMovement.cs
+ * Team members: Ethan Chang, Ryan Wu, Steven Tan
+ * Purpose: Handles player input, Rigidbody movement, jumping, optional air momentum, sprint stamina, and sprint effects.
+ */
 
 using System.Collections;
 using System.Collections.Generic;
@@ -9,11 +11,15 @@ using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 public class PlayerMovement : MonoBehaviour {
+    [Header("Ground Movement")]
+    [Tooltip("Normal horizontal movement speed in units per second.")]
     public float speed;
     [Tooltip("Movement speed multiplier while holding Sprint.")]
     [Min(1f)] public float sprintMultiplier = 1.5f;
     [Header("Sprint Stamina")]
+    [Tooltip("Stamina capacity measured in seconds of continuous sprinting.")]
     [Min(0.01f)] public float sprintDuration = 5f;
+    [Tooltip("Seconds to wait after Sprint is released before stamina can refill.")]
     [Min(0f)] public float staminaRegenDelay = 1f;
     [Tooltip("Seconds to refill an empty stamina bar after the delay.")]
     [Min(0.01f)] public float staminaRefillTime = 5f;
@@ -26,8 +32,11 @@ public class PlayerMovement : MonoBehaviour {
 
     private float stamina;
     private float regenDelayRemaining;
-    private bool exhausted;
+    private bool isSprintExhausted;
+    [Header("Look and Jump")]
+    [Tooltip("Mouse-look sensitivity multiplier for yaw and pitch.")]
     public float rotationSpeed;
+    [Tooltip("Upward impulse applied when jumping from the ground.")]
     public float jumpForce;
 
     [Header("Air Movement")]
@@ -36,34 +45,38 @@ public class PlayerMovement : MonoBehaviour {
     [Tooltip("How quickly movement keys change horizontal velocity in the air. Zero disables air control.")]
     [Min(0f)] public float airAcceleration = 6f;
     
-    // An empty GameObject placed at player head, tracked by Cinemachine camera
+    [Header("Camera Target")]
+    // An empty GameObject placed at player head, tracked by Cinemachine camera.
     public GameObject cameraTarget;
 
-    private CapsuleCollider capsule;
-    private Rigidbody rb;
+    private CapsuleCollider playerCollider;
+    private Rigidbody playerBody;
     private PlayerInput playerInput;
-    private Vector2 movementValue;
+    private Vector2 movementInput;
 
     private float pitchInput;
     private float yawInput;
 
-    private float xRotation = 0f; 
+    private float cameraPitch = 0f;
+    [Header("Gravity")]
     [SerializeField] private float gravityMultiplier = 2f;
-    private readonly RaycastHit[] groundHits = new RaycastHit[16];
+    private readonly RaycastHit[] groundProbeHits = new RaycastHit[16];
 
+    [Header("Camera Pitch Limits")]
     [SerializeField] private float minPitch = 0f;
     [SerializeField] private float maxPitch = 60f;
     
+    [Header("Ground Detection")]
     [SerializeField] private float maxSlopeAngle = 85f;
 
-    private bool jumping = false;
-    private bool sprinting = false;
+    private bool jumpHeld = false;
+    private bool isSprinting = false;
 
     Animator animator;
     private void Awake() {
-        rb = GetComponent<Rigidbody>();
+        playerBody = GetComponent<Rigidbody>();
         playerInput = GetComponent<PlayerInput>();
-        capsule = GetComponent<CapsuleCollider>();
+        playerCollider = GetComponent<CapsuleCollider>();
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
         animator = GetComponent<Animator>();
@@ -78,23 +91,24 @@ public class PlayerMovement : MonoBehaviour {
     }
     
     public void OnMove(InputValue value) {
-        movementValue = Vector2.ClampMagnitude(value.Get<Vector2>(), 1f);
-        bool isMoving = movementValue.sqrMagnitude > 0.01f;
+        movementInput = Vector2.ClampMagnitude(value.Get<Vector2>(), 1f);
+        bool isMoving = movementInput.sqrMagnitude > 0.01f;
         animator.SetBool("isWalking", isMoving);
         Debug.Log(isMoving);
     }
 
     public void OnSprint(InputValue value) {
-        // Held state is read in FixedUpdate, alongside stamina consumption.
+        // PlayerInput's Send Messages mode expects this receiver. Read the held
+        // state in FixedUpdate instead, so a missed release cannot leave sprint stuck on.
     }
 
     private void OnDisable() {
-        sprinting = false;
+        isSprinting = false;
         if (sprintParticles != null) {
             sprintParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         }
-        movementValue = Vector2.zero;
-        jumping = false;
+        movementInput = Vector2.zero;
+        jumpHeld = false;
         pitchInput = 0f;
         yawInput = 0f;
     }
@@ -107,19 +121,20 @@ public class PlayerMovement : MonoBehaviour {
     }
 
     private bool IsGrounded() {
-        Bounds bounds = capsule.bounds;
+        // Probe slightly inside the capsule; the surface-normal check rejects steep walls.
+        Bounds bounds = playerCollider.bounds;
         float radius = Mathf.Min(bounds.extents.x, bounds.extents.z) * 0.9f;
         const float groundTolerance = 0.1f;
         Vector3 origin = bounds.center;
         float distance = bounds.extents.y - radius + groundTolerance;
         int hitCount = Physics.SphereCastNonAlloc(origin, radius, Vector3.down,
-            groundHits, distance, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
+            groundProbeHits, distance, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
 
-        // Min y component of unit normal to be considered grounded (allows jumping on slopes)
+        // Minimum Y component of a surface normal that qualifies as ground, including slopes.
         float minGroundNormal = Mathf.Cos(maxSlopeAngle * Mathf.Deg2Rad);
         for (int i = 0; i < hitCount; i++) {
-            RaycastHit hit = groundHits[i];
-            if (hit.collider.attachedRigidbody != rb && hit.normal.y >= minGroundNormal) {
+            RaycastHit hit = groundProbeHits[i];
+            if (hit.collider.attachedRigidbody != playerBody && hit.normal.y >= minGroundNormal) {
                 return true;
             }
         }
@@ -128,24 +143,24 @@ public class PlayerMovement : MonoBehaviour {
     }
 
     public void OnJump(InputValue value) {
-        jumping = value.isPressed;
+        jumpHeld = value.isPressed;
         animator.SetBool("isJumping", true);
         Debug.Log("Jumping is true");
     }
 
     void Update() {
         // Pitch is applied directly to the camera pivot.
-        xRotation -= pitchInput * rotationSpeed;
-        xRotation = Mathf.Clamp(xRotation, minPitch, maxPitch);
+        cameraPitch -= pitchInput * rotationSpeed;
+        cameraPitch = Mathf.Clamp(cameraPitch, minPitch, maxPitch);
 
-        cameraTarget.transform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
+        cameraTarget.transform.localRotation = Quaternion.Euler(cameraPitch, 0f, 0f);
         // Consume mouse input after applying it.
         pitchInput = 0f;
     }
 
     void FixedUpdate() {
         // Ignore the ground probe while rising so takeoff cannot count as grounded.
-        bool grounded = rb.velocity.y <= 0.1f && IsGrounded();
+        bool grounded = playerBody.velocity.y <= 0.1f && IsGrounded();
         // Read the held state directly so a missed release callback cannot leave sprint on.
         InputAction sprintAction = playerInput != null && playerInput.isActiveAndEnabled
             ? playerInput.actions.FindAction("Player/Sprint", false) : null;
@@ -157,18 +172,19 @@ public class PlayerMovement : MonoBehaviour {
             regenDelayRemaining = staminaRegenDelay;
         }
         if (!sprintHeld) {
-            exhausted = false;
+            isSprintExhausted = false;
         }
 
-        sprinting = sprintHeld && !exhausted && stamina > 0f
-            && movementValue.sqrMagnitude > 0.01f;
-        if (sprinting) {
+        isSprinting = sprintHeld && !isSprintExhausted && stamina > 0f
+            && movementInput.sqrMagnitude > 0.01f;
+        if (isSprinting) {
             stamina = Mathf.Max(0f, stamina - Time.fixedDeltaTime);
             if (stamina <= 0f) {
                 // Require a release after exhaustion to avoid rapid sprint/walk pulses.
-                exhausted = true;
+                isSprintExhausted = true;
             }
         } else if (!sprintHeld) {
+            // Only the part of this physics step after the delay expires may refill stamina.
             float refillDelta = Mathf.Max(0f, Time.fixedDeltaTime - regenDelayRemaining);
             regenDelayRemaining = Mathf.Max(0f, regenDelayRemaining - Time.fixedDeltaTime);
             stamina = Mathf.Min(sprintDuration, stamina
@@ -179,45 +195,46 @@ public class PlayerMovement : MonoBehaviour {
         }
         UpdateSprintParticles();
 
-        Vector3 movementDirection = (transform.right * movementValue.x) + (transform.forward * movementValue.y);
-        float movementSpeed = speed * (sprinting ? sprintMultiplier : 1f);
+        Vector3 movementDirection = (transform.right * movementInput.x) + (transform.forward * movementInput.y);
+        float movementSpeed = speed * (isSprinting ? sprintMultiplier : 1f);
+        // With momentum disabled, the original instant steering/stopping also applies in midair.
         if (grounded || !useJumpMomentum) {
             Vector3 movement = movementDirection * movementSpeed;
-            rb.velocity = new Vector3(movement.x, rb.velocity.y, movement.z);
-        } else if (movementValue.sqrMagnitude > 0.01f) {
+            playerBody.velocity = new Vector3(movement.x, playerBody.velocity.y, movement.z);
+        } else if (movementInput.sqrMagnitude > 0.01f) {
             // Keep momentum without input; steer toward input gradually instead of
             // instantly replacing velocity. Preserve faster sprint takeoff speed.
-            Vector3 horizontalVelocity = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
+            Vector3 horizontalVelocity = new Vector3(playerBody.velocity.x, 0f, playerBody.velocity.z);
             float airSpeed = Mathf.Max(movementSpeed, horizontalVelocity.magnitude);
             Vector3 targetVelocity = movementDirection * airSpeed;
             horizontalVelocity = Vector3.MoveTowards(horizontalVelocity, targetVelocity,
                 airAcceleration * Time.fixedDeltaTime);
-            rb.velocity = new Vector3(horizontalVelocity.x, rb.velocity.y, horizontalVelocity.z);
+            playerBody.velocity = new Vector3(horizontalVelocity.x, playerBody.velocity.y, horizontalVelocity.z);
         }
         
         // Apply horizontal rotation to the Rigidbody (this rotates the camera as well with respect to pivot).
         float yaw = yawInput * rotationSpeed;
-        rb.MoveRotation(rb.rotation * Quaternion.Euler(0f, yaw, 0f));
+        playerBody.MoveRotation(playerBody.rotation * Quaternion.Euler(0f, yaw, 0f));
 
         // Consume mouse input after applying it.
         yawInput = 0f;
 
         // Extra gravity (allows player to fall faster)
-        rb.AddForce(Physics.gravity * (gravityMultiplier - 1f), ForceMode.Acceleration);
+        playerBody.AddForce(Physics.gravity * (gravityMultiplier - 1f), ForceMode.Acceleration);
 
         // Automatically jump whenever grounded and jump key is pressed
-        if (jumping && grounded) {
-            rb.velocity = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
-            rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+        if (jumpHeld && grounded) {
+            playerBody.velocity = new Vector3(playerBody.velocity.x, 0f, playerBody.velocity.z);
+            playerBody.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
         }
-        else if (animator.GetBool("isJumping") && rb.velocity.y <= 0f && grounded)
+        else if (animator.GetBool("isJumping") && playerBody.velocity.y <= 0f && grounded)
         {
             animator.SetBool("isJumping", false);
             Debug.Log("Jumping: False");
         }
-        // assign sprinting boolean for animation
-        sprinting = sprintHeld && !exhausted && stamina > 0f && movementValue.sqrMagnitude > 0.01f;
-        animator.SetBool("isSprinting", sprinting);
+        // Recheck after draining stamina so the sprint animation ends on the exhaustion frame.
+        isSprinting = sprintHeld && !isSprintExhausted && stamina > 0f && movementInput.sqrMagnitude > 0.01f;
+        animator.SetBool("isSprinting", isSprinting);
     }
 
     private void UpdateSprintParticles() {
@@ -225,7 +242,7 @@ public class PlayerMovement : MonoBehaviour {
             return;
         }
 
-        if (sprinting && stamina > 0f) {
+        if (isSprinting && stamina > 0f) {
             // isEmitting allows a quick restart while older particles fade out.
             if (!sprintParticles.isEmitting) {
                 sprintParticles.Play(true);
@@ -237,6 +254,7 @@ public class PlayerMovement : MonoBehaviour {
 
     private void InitializeSprintBar() {
         if (sprintBar == null) {
+            // Parent the generated HUD to the player so it is cleaned up on death.
             GameObject canvasObject = new GameObject("Sprint HUD", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler));
             canvasObject.transform.SetParent(transform, false);
             Canvas canvas = canvasObject.GetComponent<Canvas>();

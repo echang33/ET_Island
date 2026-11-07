@@ -1,6 +1,8 @@
 /*
-Team members: Ethan Chang, Ryan Wu, Steven tan
-*/
+ * GraphUI.cs
+ * Team members: Ethan Chang, Ryan Wu, Steven Tan
+ * Purpose: Draws graph puzzles in the UI, parses vertex answers, and reports results to the puzzle activator.
+ */
 
 using System.Collections;
 using System.Collections.Generic;
@@ -8,13 +10,17 @@ using UnityEngine;
 using TMPro;
 
 public class GraphUI : MonoBehaviour {
+    [Header("Puzzle UI References")]
     [SerializeField] private TMP_Text questionText;
     [SerializeField] private GameObject vertexPrefab;
     [SerializeField] private GameObject edgePrefab;
 
+    [Header("Graph Generation")]
+    [Tooltip("Keep graphs small: finding the optimal clique and cover enumerates every vertex subset.")]
     [SerializeField] private int numNodes = 8;
 
-    // Graph nodes are drawn around an ellipse
+    [Header("Graph Layout")]
+    // Graph nodes are drawn around an ellipse in Canvas coordinates.
     [SerializeField] private float ellipseMajorAxis = 300f;
     [SerializeField] private float ellipseMinorAxis = 200f;
 
@@ -23,10 +29,11 @@ public class GraphUI : MonoBehaviour {
     // Probability of an edge being present (for random graph generation)
     [SerializeField] private float edgeDensity = 0.7f;
 
+    [Header("Graph Containers")]
     [SerializeField] private RectTransform edgeContainer;
     [SerializeField] private RectTransform vertexContainer;
 
-    // Answer box for user to type in their answer
+    [Header("Answer Input")]
     [SerializeField] private TMP_InputField answerBox;
 
     // graph stores the graph data structure
@@ -60,19 +67,19 @@ public class GraphUI : MonoBehaviour {
         DrawGraph();
     }
 
-    public void Initialize(PuzzleActivator _activator) {
-        activator = _activator;
+    public void Initialize(PuzzleActivator puzzleActivator) {
+        activator = puzzleActivator;
     }
 
     private void DrawGraph() {
         // Draw vertices
-        for (int i = 0; i < graph.N; i++) {
+        for (int i = 0; i < graph.vertexCount; i++) {
             CreateVertex(i);
         }
         // Draw edges
-        for (int i = 0; i < graph.N; i++) {
-            for (int j = i + 1; j < graph.N; j++) {
-                if (graph.adjMat[i, j] == true) {
+        for (int i = 0; i < graph.vertexCount; i++) {
+            for (int j = i + 1; j < graph.vertexCount; j++) {
+                if (graph.adjacencyMatrix[i, j] == true) {
                     CreateEdge(i, j);
                 }
             }
@@ -84,7 +91,7 @@ public class GraphUI : MonoBehaviour {
         RectTransform rect = vertex.GetComponent<RectTransform>();
 
         // Evenly distribute vertices around the ellipse
-        float angle = 2f * Mathf.PI * id / graph.N;
+        float angle = 2f * Mathf.PI * id / graph.vertexCount;
 
         float x = ellipseMajorAxis * Mathf.Cos(angle);
         float y = ellipseMinorAxis * Mathf.Sin(angle);
@@ -135,7 +142,7 @@ public class GraphUI : MonoBehaviour {
             }
 
             // Make sure the vertex ID is valid
-            if (node < 0 || node >= graph.N) {
+            if (node < 0 || node >= graph.vertexCount) {
                 Debug.Log("Invalid vertex ID: " + node);
                 return;
             }

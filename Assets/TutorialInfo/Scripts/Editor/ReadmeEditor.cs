@@ -1,4 +1,10 @@
-﻿using System.Collections;
+/*
+ * ReadmeEditor.cs
+ * Team members: Ethan Chang, Ryan Wu, Steven Tan
+ * Purpose: Unity template custom Inspector that displays the project readme and loads its editor layout.
+ */
+
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
@@ -36,6 +42,8 @@ public class ReadmeEditor : Editor {
 	
 	static void LoadLayout()
 	{
+		// Unity's template accesses the editor layout API through reflection because
+		// it is not exposed as a normal public type in every supported editor version.
 		var assembly = typeof(EditorApplication).Assembly; 
 		var windowLayoutType = assembly.GetType("UnityEditor.WindowLayout", true);
 		var method = windowLayoutType.GetMethod("LoadWindowLayout", BindingFlags.Public | BindingFlags.Static);

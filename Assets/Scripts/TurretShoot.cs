@@ -1,31 +1,41 @@
+/*
+ * TurretShoot.cs
+ * Team members: Ethan Chang, Ryan Wu, Steven Tan
+ * Purpose: Provides a simple repeating turret shooter without the EnemyFSM detection and state logic.
+ */
+
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class TurretShoot : MonoBehaviour {
-    public GameObject prefab;
+    [Header("Projectile and Effects")]
+    [FormerlySerializedAs("prefab")]
+    public GameObject projectilePrefab;
     public GameObject shootPoint;
     public ParticleSystem muzzle;
-    // How many seconds to wait between each shot
-    public float fireRate = 2f; 
+    [Header("Firing Timing")]
+    [Tooltip("Seconds between shots. Lower values fire faster.")]
+    [FormerlySerializedAs("fireRate")]
+    public float shotIntervalSeconds = 2f;
     
     // Tracks time passed since the last shot
-    private float timer = 0f;
+    private float secondsSinceLastShot = 0f;
 
     void Update() {
-        // Time.deltaTime is the exact time it took to draw the last frame.
-        // Adding it up creates a real-world stopwatch.
-        timer += Time.deltaTime;
+        // Scaled time pauses this cooldown while a graph puzzle has Time.timeScale set to zero.
+        secondsSinceLastShot += Time.deltaTime;
 
-        // If the stopwatch reaches your fireRate, shoot and reset the clock
-        if (timer >= fireRate) {
+        // Fire once the cooldown has elapsed, then restart the timer.
+        if (secondsSinceLastShot >= shotIntervalSeconds) {
             OnFire();
-            timer = 0f; 
+            secondsSinceLastShot = 0f;
         }
     }
 
     public void OnFire() {
-        GameObject clone = Instantiate(prefab, shootPoint.transform.position, shootPoint.transform.rotation);
-        //muzzle.Play();
+        GameObject projectile = Instantiate(projectilePrefab, shootPoint.transform.position, shootPoint.transform.rotation);
+        // Muzzle particles are currently configured separately; firing only spawns the projectile.
     }
 }

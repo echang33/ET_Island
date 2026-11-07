@@ -1,14 +1,25 @@
+/*
+ * RampMesh.cs
+ * Team members: Ethan Chang, Ryan Wu, Steven Tan
+ * Purpose: Builds a wedge-shaped ramp mesh with face-specific vertices, texture coordinates, and configurable rotation.
+ */
+
 using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
 public class RampMesh : MonoBehaviour {
+    [Header("Ramp Dimensions")]
+    [Tooltip("Local X width. The ramp extends along local Z and rises toward positive Z.")]
     public float width = 2f;
     public float length = 3f;
     public float height = 1.5f;
+    [Header("Appearance")]
+    [Tooltip("World units per texture repeat. Must be nonzero because UV coordinates are divided by it.")]
     public float textureScale = 1f;
 
+    [Tooltip("Local yaw in degrees, applied when Generate is called.")]
     public float rotationY = 0f;
     public Material material;
 
@@ -16,7 +27,7 @@ public class RampMesh : MonoBehaviour {
         Mesh mesh = new Mesh();
         mesh.name = "Ramp";
 
-        // Ramp rises along -Z axis.
+        // The high edge is at +Z. Separate vertices per face give the wedge sharp normals.
         Vector3[] vertices = {
             // Bottom
             new Vector3(-width / 2, 0, -length / 2), // 0

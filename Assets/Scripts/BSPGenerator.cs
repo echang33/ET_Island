@@ -1,16 +1,25 @@
+/*
+ * BSPGenerator.cs
+ * Team members: Ethan Chang, Ryan Wu, Steven Tan
+ * Purpose: Builds the procedural labyrinth using binary space partitioning, connected room openings, ramps, and lights.
+ */
+
 using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class BSPGenerator : MonoBehaviour {
+    [Header("Generated Spawn")]
+    [Tooltip("Marker moved to the retained room whose center has the greatest X + Y + Z sum.")]
     public Transform spawn;
 
     [Header("Bounds")]
+    [Tooltip("Minimum corner in generator-local space; the object's transform places the building in the world.")]
     public Vector3 boundsMin = Vector3.zero;
     public Vector3 boundsMax = new Vector3(200f, 100f, 200f);
 
-    // Procedural generation hollows out the center (innerRemoveBorder), and removes rooms on the outer
-    // border (outerRemoveBorder).
+    [Header("Hollow Building Shape")]
+    // Fractions of each bounds dimension, not world-unit distances. Tests use room centers.
     public float outerRemoveBorder = 0.1f;
     public float innerRemoveBorder = 0.4f;
 
@@ -33,15 +42,20 @@ public class BSPGenerator : MonoBehaviour {
     public float minRampHeight = 0.5f;
 
     [Header("Randomness")]
+    [Tooltip("Seeds both random generators so the same settings reproduce the room layout.")]
     public int seed = 42;
+    [Tooltip("Fraction used only by RemoveRegionsRandom; the current Generate path uses ring removal instead.")]
     public float removePercent = 0.4f;
 
     [Header("Materials")]
     public Material rampMaterial;
     public List<Material> wallMaterials;
     public List<Material> floorMaterials;
+    [Header("Surface Physics")]
     public PhysicMaterial rampPhysicMaterial;
     public PhysicMaterial wallPhysicMaterial;
+    [Header("Texture Tiling")]
+    [Tooltip("World units per texture repeat; must be nonzero.")]
     public float textureScale = 1.0f;
 
     [Header("Lights")]
@@ -50,8 +64,10 @@ public class BSPGenerator : MonoBehaviour {
 
     [Serializable]
     public struct Region {
+        [Header("Local Bounds")]
         public Vector3 Min;
         public Vector3 Max;
+        [Header("Room Materials")]
         public Material FloorMat;
         public Material WallMat;
 
@@ -68,9 +84,11 @@ public class BSPGenerator : MonoBehaviour {
 
     [Serializable]
     public struct Edge {
+        [Header("Connected Room Indices")]
         public int RegionA;
         public int RegionB;
 
+        [Header("Shared Face")]
         // 0 = X-normal face, 1 = Y-normal face, 2 = Z-normal face.
         public int Axis;
         public float PlaneCoordinate;
@@ -78,6 +96,7 @@ public class BSPGenerator : MonoBehaviour {
         // Only the two coordinates lying in the face are relevant.
         public Vector3 OverlapMin;
         public Vector3 OverlapMax;
+        [Header("Doorway Bounds")]
         public Vector3 OpeningMin;
         public Vector3 OpeningMax;
 
@@ -96,30 +115,31 @@ public class BSPGenerator : MonoBehaviour {
 
     private enum SplitAxis { X, Y, Z }
 
-    private int N;
+    private int regionCount;
     private List<Region> leafRegions = new List<Region>();
     private List<Edge> edges = new List<Edge>();
-    // adjList[i] stores a list of (j, e), indicating edges[e] goes from i -> j
-    private List<List<(int, int)>> adjList = new List<List<(int, int)>>();
+    // roomAdjacency[i] stores a list of (j, e), indicating edges[e] goes from i -> j
+    private List<List<(int, int)>> roomAdjacency = new List<List<(int, int)>>();
     // Stores whether each region was removed during removal phase
     private List<bool> removed;
 
-    private System.Random rng;
-    private Transform genRoot;
+    private System.Random layoutRandom;
+    private Transform generatedRoot;
 
     private void Awake() {
+        // Geometry is generated in Awake, before GameManager.Start reads the spawn marker.
         UnityEngine.Random.InitState(seed);
-        rng = new System.Random(seed);
+        layoutRandom = new System.Random(seed);
         Generate();
     }
 
     public void Generate() {
         // Use BSP to generate irregularly shaped rectangular rooms
         SplitRecursively(new Region(boundsMin, boundsMax));
-        N = leafRegions.Count;
+        regionCount = leafRegions.Count;
 
         removed = new List<bool>();
-        for (int i = 0; i < N; i++) {
+        for (int i = 0; i < regionCount; i++) {
             removed.Add(false);
         }
         // Create graph, where edges connect rooms that share a face
@@ -137,9 +157,11 @@ public class BSPGenerator : MonoBehaviour {
 
         // Add central light (killswitch at the center of the data center)
         GameObject coreLight = Instantiate(coreLightPrefab);
-        coreLight.transform.SetParent(genRoot, false);
+        coreLight.transform.SetParent(generatedRoot, false);
         coreLight.transform.localPosition = (boundsMin + boundsMax) * 0.5f;
 
+        // Pick the far positive corner by center-coordinate sum, then convert that
+        // local room center into world space for GameManager's spawn marker.
         Region corner = leafRegions[0];
         for (int i = 1; i < leafRegions.Count; i++) {
             Region cur = leafRegions[i];
@@ -149,31 +171,31 @@ public class BSPGenerator : MonoBehaviour {
                 corner = cur;
             }
         }
-        spawn.position = genRoot.TransformPoint(corner.Center);
+        spawn.position = generatedRoot.TransformPoint(corner.Center);
     }
 
     // Depth first search to check connectivity
-    private void DFS(int cur, bool[] vis) {
+    private void VisitConnectedRooms(int cur, bool[] vis) {
         if (vis[cur] || removed[cur]) {
             return;
         }
         vis[cur] = true;
-        for (int i = 0; i < adjList[cur].Count; i++) {
-            int to = adjList[cur][i].Item1;
-            DFS(to, vis);
+        for (int i = 0; i < roomAdjacency[cur].Count; i++) {
+            int to = roomAdjacency[cur][i].Item1;
+            VisitConnectedRooms(to, vis);
         }
     }
 
     // Returns true if graph is connected
     private bool IsConnected() {
-        bool[] vis = new bool[N];
-        for (int i = 0; i < N; i++) {
+        bool[] vis = new bool[regionCount];
+        for (int i = 0; i < regionCount; i++) {
             if (!vis[i]) {
-                DFS(i, vis);
+                VisitConnectedRooms(i, vis);
                 break;
             }
         }
-        for (int i = 0; i < N; i++) {
+        for (int i = 0; i < regionCount; i++) {
             if (!removed[i] && !vis[i]) {
                 return false;
             }
@@ -181,15 +203,15 @@ public class BSPGenerator : MonoBehaviour {
         return true;
     }
 
-    private bool inBox(Vector3 p, Vector3 boxMin, Vector3 boxMax) {
+    private bool IsInsideBounds(Vector3 p, Vector3 boxMin, Vector3 boxMax) {
         return (p.x >= boxMin.x && p.y >= boxMin.y && p.z >= boxMin.z) && 
                 (p.x <= boxMax.x && p.y <= boxMax.y && p.z <= boxMax.z);
     } 
 
     // Leaves a rectangular "ring" of regions, hollowing out the center and border
     private void RemoveRegionsRing(Vector3 outerMin, Vector3 outerMax, Vector3 innerMin, Vector3 innerMax) {
-        for (int i = 0; i < N; i++) {
-            if (inBox(leafRegions[i].Center, innerMin, innerMax) || !inBox(leafRegions[i].Center, outerMin, outerMax)) {
+        for (int i = 0; i < regionCount; i++) {
+            if (IsInsideBounds(leafRegions[i].Center, innerMin, innerMax) || !IsInsideBounds(leafRegions[i].Center, outerMin, outerMax)) {
                 removed[i] = true;
             }
         }
@@ -199,18 +221,18 @@ public class BSPGenerator : MonoBehaviour {
     // Remove subset of rooms while keeping labryinth connected
     private void RemoveRegionsRandom() {
         // Generate random permutation for order to attempt removals
-        int[] p = new int[N];
-        for (int i = 0; i < N; i++) {
+        int[] p = new int[regionCount];
+        for (int i = 0; i < regionCount; i++) {
             p[i] = i;
         }
-        for (int i = N - 1; i > 0; i--) {
-            int j = rng.Next(i + 1); // Random integer in [0, i]
+        for (int i = regionCount - 1; i > 0; i--) {
+            int j = layoutRandom.Next(i + 1); // Random integer in [0, i]
             (p[i], p[j]) = (p[j], p[i]);
         }
 
         int removedCnt = 0;
-        for (int i = 0; i < N; i++) {
-            if (removedCnt > removePercent * N) {
+        for (int i = 0; i < regionCount; i++) {
+            if (removedCnt > removePercent * regionCount) {
                 break;
             }
             // Attempt removal, then check if it disconnects graph
@@ -226,10 +248,12 @@ public class BSPGenerator : MonoBehaviour {
     }
 
     private void CompressGraph() {
+        // Removing rooms changes list indices. Rebuild edges and adjacency with the
+        // same old-to-new mappings so no connection points at the wrong room.
         // Map old vertex IDs to new vertex IDs. -1 means the vertex was removed.
-        int[] vertexMap = new int[N];
+        int[] vertexMap = new int[regionCount];
         int newN = 0;
-        for (int i = 0; i < N; i++) {
+        for (int i = 0; i < regionCount; i++) {
             vertexMap[i] = (removed[i] ? -1 : newN++);
         }
 
@@ -247,7 +271,7 @@ public class BSPGenerator : MonoBehaviour {
 
         // Rebuild regions using the new vertex IDs.
         List<Region> newRegions = new List<Region>(newN);
-        for (int i = 0; i < N; i++) {
+        for (int i = 0; i < regionCount; i++) {
             if (vertexMap[i] != -1) {
                 newRegions.Add(leafRegions[i]);
             }
@@ -270,12 +294,12 @@ public class BSPGenerator : MonoBehaviour {
         for (int i = 0; i < newN; i++) {
             newAdjList.Add(new List<(int, int)>());
         }
-        for (int oldU = 0; oldU < N; oldU++) {
+        for (int oldU = 0; oldU < regionCount; oldU++) {
             int newU = vertexMap[oldU];
             if (newU == -1) {
                 continue;
             }
-            foreach ((int oldV, int oldE) in adjList[oldU]) {
+            foreach ((int oldV, int oldE) in roomAdjacency[oldU]) {
                 int newV = vertexMap[oldV];
                 int newE = edgeMap[oldE];
                 if (newV != -1 && newE != -1) {
@@ -285,14 +309,14 @@ public class BSPGenerator : MonoBehaviour {
         }
 
         // Replace the old graph.
-        N = newN;
+        regionCount = newN;
         leafRegions = newRegions;
         edges = newEdges;
-        adjList = newAdjList;
+        roomAdjacency = newAdjList;
 
         // All remaining vertices are now retained.
-        removed = new List<bool>(N);
-        for (int i = 0; i < N; i++) {
+        removed = new List<bool>(regionCount);
+        for (int i = 0; i < regionCount; i++) {
             removed.Add(false);
         }
     }
@@ -310,13 +334,13 @@ public class BSPGenerator : MonoBehaviour {
         // No splits left means this is a final leaf region
         if (available.Count == 0) {
             // Randomly pick floor and wall materials
-            region.FloorMat = floorMaterials[rng.Next(floorMaterials.Count)];
-            region.WallMat = wallMaterials[rng.Next(wallMaterials.Count)];
+            region.FloorMat = floorMaterials[layoutRandom.Next(floorMaterials.Count)];
+            region.WallMat = wallMaterials[layoutRandom.Next(wallMaterials.Count)];
         
             leafRegions.Add(region);
             return;
         }
-        Split(region, available[rng.Next(available.Count)], out Region first, out Region second);
+        Split(region, available[layoutRandom.Next(available.Count)], out Region first, out Region second);
 
         SplitRecursively(first);
         SplitRecursively(second);
@@ -333,7 +357,7 @@ public class BSPGenerator : MonoBehaviour {
         // do not go below min room length along the coordinate)
         float splitMin = min[i] + minLength;
         float splitMax = max[i] - minLength;
-        float splitPosition = splitMin + (float) rng.NextDouble() * (splitMax - splitMin);
+        float splitPosition = splitMin + (float) layoutRandom.NextDouble() * (splitMax - splitMin);
 
         Vector3 firstMax = max;
         Vector3 secondMin = min;
@@ -356,14 +380,14 @@ public class BSPGenerator : MonoBehaviour {
 
     // Create graph where each region is a node, and edges connect regions that touch on a face
     private void BuildAdjacencyGraph() {
-        for (int i = 0; i < N; i++) {
-            adjList.Add(new List<(int, int)>());
+        for (int i = 0; i < regionCount; i++) {
+            roomAdjacency.Add(new List<(int, int)>());
         }
         for (int i = 0; i < leafRegions.Count; i++) {
             for (int j = i + 1; j < leafRegions.Count; j++) {
                 if (TryCreateEdge(i, j, out Edge edge)) {
-                    adjList[i].Add((j, edges.Count));
-                    adjList[j].Add((i, edges.Count));
+                    roomAdjacency[i].Add((j, edges.Count));
+                    roomAdjacency[j].Add((i, edges.Count));
                     edges.Add(edge);
                 }
             }
@@ -438,8 +462,8 @@ public class BSPGenerator : MonoBehaviour {
     // Generate labryinth rooms
     private void GenerateRooms() {
         GameObject root = new GameObject("Generated Labryinth");
-        genRoot = root.transform;
-        genRoot.SetParent(transform, false);
+        generatedRoot = root.transform;
+        generatedRoot.SetParent(transform, false);
 
         for (int i = 0; i < leafRegions.Count; i++) {
             Region region = leafRegions[i];
@@ -463,7 +487,7 @@ public class BSPGenerator : MonoBehaviour {
 
         // Room light for ceiling
         GameObject roomLight = Instantiate(roomLightPrefab);
-        roomLight.transform.SetParent(genRoot, false);
+        roomLight.transform.SetParent(generatedRoot, false);
 
         Vector3 lightPos = region.Center;
         lightPos.y = region.Max.y - shrinkageBorder - wallThickness - 0.5f;
@@ -481,8 +505,8 @@ public class BSPGenerator : MonoBehaviour {
 
         // Find all edges that connect to this face of this region.
         List<Edge> faceEdges = new List<Edge>();
-        for (int i = 0; i < adjList[regionIndex].Count; i++) {
-            Edge edge = edges[adjList[regionIndex][i].Item2];
+        for (int i = 0; i < roomAdjacency[regionIndex].Count; i++) {
+            Edge edge = edges[roomAdjacency[regionIndex][i].Item2];
             if (edge.Axis != axis) continue;
 
             // The plane is drawn at an inset of shrinkageBorder and half of the wall thickness, whereas
@@ -590,7 +614,7 @@ public class BSPGenerator : MonoBehaviour {
             float rotationY = (axis == 0 ? (direction > 0 ? 90f : 270f) : (direction > 0 ? 0f : 180f));
 
             GameObject ramp = new GameObject("Ramp");
-            ramp.transform.SetParent(genRoot, false);
+            ramp.transform.SetParent(generatedRoot, false);
             ramp.transform.localPosition = position;
 
             RampMesh rampMesh = ramp.AddComponent<RampMesh>();
@@ -628,7 +652,7 @@ public class BSPGenerator : MonoBehaviour {
 
         GameObject wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
         wall.name = "Wall";
-        wall.transform.SetParent(genRoot, false);
+        wall.transform.SetParent(generatedRoot, false);
         wall.transform.localPosition = center;
         wall.transform.localRotation = Quaternion.identity;
         wall.transform.localScale = size;

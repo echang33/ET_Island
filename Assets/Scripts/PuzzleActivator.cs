@@ -1,6 +1,8 @@
 /*
-Team members: Ethan Chang, Ryan Wu, Steven tan
-*/
+ * PuzzleActivator.cs
+ * Team members: Ethan Chang, Ryan Wu, Steven Tan
+ * Purpose: Opens a graph puzzle on player entry, pauses gameplay, and applies success or failure to turrets.
+ */
 
 using System.Collections;
 using System.Collections.Generic;
@@ -8,7 +10,9 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class PuzzleActivator : MonoBehaviour {
+    [Header("Puzzle UI")]
     [SerializeField] private GameObject graphPuzzlePrefab;
+    [Header("Affected Turrets")]
     [Tooltip("Turrets enraged by failure. Leave empty to affect all EnemyFSM turrets in the scene.")]
     [SerializeField] private EnemyFSM[] turrets;
     private GameObject activePuzzle;
@@ -31,7 +35,7 @@ public class PuzzleActivator : MonoBehaviour {
         puzzleUI = activePuzzle.GetComponentInChildren<GraphUI>();
         puzzleUI.Initialize(this);
 
-        // Freeze the 3D game play
+        // Pause scaled simulation, but keep the UI responsive. PlayerInput is disabled separately.
         Time.timeScale = 0f;
         PlayerInput playerInput = player.GetComponent<PlayerInput>();
         playerInput.enabled = false;
@@ -69,7 +73,7 @@ public class PuzzleActivator : MonoBehaviour {
             }
         }
 
-        // Delete all live bullets (gives player immunity)
+        // Remove bullets already in flight so deactivated turrets cannot cause a delayed hit.
         ProjectileMovement[] projectiles = FindObjectsByType<ProjectileMovement>(FindObjectsSortMode.None);
         foreach (ProjectileMovement projectile in projectiles) {
             Destroy(projectile.gameObject);

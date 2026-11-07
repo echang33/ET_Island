@@ -1,6 +1,8 @@
 /*
-Team members: Ethan Chang, Ryan Wu, Steven tan
-*/
+ * VertexUI.cs
+ * Team members: Ethan Chang, Ryan Wu, Steven Tan
+ * Purpose: Displays the integer vertex identifier used by the graph puzzle answer field.
+ */
 
 using System.Collections;
 using System.Collections.Generic;
