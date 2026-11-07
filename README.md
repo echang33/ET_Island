@@ -184,8 +184,10 @@ There are many configurable parameters going into the generation algorithm descr
 - Lasers now have a slight "spark" effect, where glowing particles will float up from the lasers periodically.
 - Added muzzle flash to turrets 
 - Added a death particle effect
+- Added lighting effects in hallway
 
 ![laser sparkle](./Screenshots/laser_sparkle.png)
+![lighting](./Screenshots/lighting.png)
 
 
 Muzzle flash demo: https://github.com/user-attachments/assets/e1ef4e41-37aa-485d-88e6-a7f49b30ab83
