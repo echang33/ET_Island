@@ -205,6 +205,7 @@ Muzzle flash demo: https://github.com/user-attachments/assets/e1ef4e41-37aa-485d
 
 **Post-processing Effects**
 - Post-processing effects were also added. Currently, we just added a bloom filter and vignette effects. The bloom filter makes the central killswitch light look more mysterious since it gives it a glow effect.
+- A motion blur effect was added, it is triggered when sprinting.
 
 ## Instructions for Testing the Project
 

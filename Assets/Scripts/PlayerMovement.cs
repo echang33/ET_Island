@@ -8,6 +8,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Rendering;
 using UnityEngine.UI;
 
 public class PlayerMovement : MonoBehaviour {
@@ -29,6 +30,12 @@ public class PlayerMovement : MonoBehaviour {
     [Header("Sprint Effects")]
     [Tooltip("Optional looping particle effect that emits only while sprinting.")]
     public ParticleSystem sprintParticles;
+
+    [Header("Sprint Motion Blur")]
+    [Tooltip("Optional dedicated sprint blur Volume. Assign the object from the scene Hierarchy, not a prefab asset.")]
+    public Volume sprintBlurVolume;
+    [Tooltip("Volume weight change per second. Higher values fade the blur faster.")]
+    [Min(0.01f)] public float blurFadeSpeed = 5f;
 
     private float stamina;
     private float regenDelayRemaining;
@@ -82,6 +89,9 @@ public class PlayerMovement : MonoBehaviour {
         animator = GetComponent<Animator>();
         stamina = sprintDuration;
         InitializeSprintBar();
+        if (sprintBlurVolume != null) {
+            sprintBlurVolume.weight = 0f;
+        }
         if (sprintParticles != null) {
             var main = sprintParticles.main;
             main.playOnAwake = false;
@@ -104,6 +114,10 @@ public class PlayerMovement : MonoBehaviour {
 
     private void OnDisable() {
         isSprinting = false;
+        // The Volume may belong to the scene, so clear it before the player is destroyed.
+        if (sprintBlurVolume != null) {
+            sprintBlurVolume.weight = 0f;
+        }
         if (sprintParticles != null) {
             sprintParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         }
@@ -156,6 +170,7 @@ public class PlayerMovement : MonoBehaviour {
         cameraTarget.transform.localRotation = Quaternion.Euler(cameraPitch, 0f, 0f);
         // Consume mouse input after applying it.
         pitchInput = 0f;
+        UpdateSprintBlur();
     }
 
     void FixedUpdate() {
@@ -235,6 +250,19 @@ public class PlayerMovement : MonoBehaviour {
         // Recheck after draining stamina so the sprint animation ends on the exhaustion frame.
         isSprinting = sprintHeld && !isSprintExhausted && stamina > 0f && movementInput.sqrMagnitude > 0.01f;
         animator.SetBool("isSprinting", isSprinting);
+    }
+
+    private void UpdateSprintBlur() {
+        if (sprintBlurVolume == null) {
+            return;
+        }
+
+        // FixedUpdate stops during puzzles; gate the cached sprint state so blur
+        // can still fade away when gameplay is paused or player input is disabled.
+        bool showBlur = isSprinting && stamina > 0f && Application.isFocused
+            && Time.timeScale > 0f && playerInput != null && playerInput.isActiveAndEnabled;
+        sprintBlurVolume.weight = Mathf.MoveTowards(sprintBlurVolume.weight,
+            showBlur ? 1f : 0f, Mathf.Max(0.01f, blurFadeSpeed) * Time.unscaledDeltaTime);
     }
 
     private void UpdateSprintParticles() {
