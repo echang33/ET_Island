@@ -52278,6 +52278,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Turret
       objectReference: {fileID: 0}
+    - target: {fileID: 6926941715255503938, guid: 802c726eb43575a40ba341875e3750fe,
+        type: 3}
+      propertyPath: m_PlayOnAwake
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7415451393390518786, guid: 802c726eb43575a40ba341875e3750fe,
         type: 3}
       propertyPath: playOnAwake

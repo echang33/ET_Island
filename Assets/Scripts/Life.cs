@@ -6,6 +6,7 @@
 
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -17,6 +18,7 @@ public class Life : MonoBehaviour {
     public UnityEvent onDeath;
     [Tooltip("Optional particle-effect prefab spawned independently at this object's position on death.")]
     public GameObject deathEffectPrefab;
+    public AudioSource deathEffect;
 
     private bool isDead;
 
@@ -27,10 +29,12 @@ public class Life : MonoBehaviour {
             if (deathEffectPrefab != null) {
                 // No parent: the effect survives this object's destruction.
                 Instantiate(deathEffectPrefab, transform.position, Quaternion.identity);
+                deathEffect.Play();
             }
             if (onDeath != null) {
                 onDeath.Invoke();
             }
+            //Thread.Sleep(1000);
             Destroy(gameObject);
         }
     }

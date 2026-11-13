@@ -22,6 +22,7 @@ public class EnemyFSM : MonoBehaviour
     public GameObject projectilePrefab;
     public GameObject shootPoint;
     public ParticleSystem muzzleFlash;
+    public AudioSource shootSound;
     [Header("Firing Timing")]
     [Tooltip("Seconds between shots. Lower values fire faster.")]
     [FormerlySerializedAs("fireRate")]
@@ -106,6 +107,7 @@ public class EnemyFSM : MonoBehaviour
         {
             lastShootTime = Time.time;
             muzzleFlash.Play();
+            shootSound.Play();
             GameObject projectile = Instantiate(projectilePrefab, shootPoint.transform.position, shootPoint.transform.rotation);
             if (IsSuperMode && projectile.TryGetComponent<ProjectileMovement>(out var movement))
             {
