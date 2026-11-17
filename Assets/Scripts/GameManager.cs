@@ -1,176 +1,183 @@
 /*
  * GameManager.cs
  * Team members: Ethan Chang, Ryan Wu, Steven Tan
- * Purpose: Places the player at the selected spawn, detects falls, and reloads the scene after death.
+ * Purpose: Manages lives, respawning, and game over.
  */
 
-using System.Collections;
 using UnityEngine;
-using UnityEngine.SceneManagement; // Required to reload scenes
-using TMPro; // Required to use TextMeshPro UI
+using UnityEngine.SceneManagement;
+using TMPro;
 
 public class GameManager : MonoBehaviour
 {
-    [Header("Player Health")]
+    [Header("Player")]
     public Life playerLife;
-    
-    [Header("Game Over UI and Restart")]
-    public TextMeshProUGUI gameOverText;
-    
-    // How long to wait before reloading (in seconds)
-    public float restartDelay = 2f; 
-
-    [Header("Fall Safeguard")]
-    public bool killOnFall = true;
-    [Tooltip("World-space Y position below which the player dies. Set below the lowest playable floor.")]
-    public float killHeight = -20f;
-
-    [Header("Spawn Settings")]
-    [Tooltip("Choose the alternate spawn when the scene starts. Set before pressing Play.")]
-    public bool useAlternateSpawn;
-    [Tooltip("The player root (ChiPohLe). If empty, uses Player Life's transform.")]
     public Transform player;
+    public Rigidbody playerRigidbody;
+    public MonoBehaviour[] controlScripts;
+
+    [Header("Lives")]
+    public HeartUI heartUI;
+    public int maxLives = 3;
+    private int lives;
+    private float startingHealth;
+
+    [Header("Respawn")]
+    public float respawnDelay = 1f;
     public Transform normalSpawn;
     public Transform alternateSpawn;
+    public bool useAlternateSpawn;
 
-    private bool gameOverStarted;
-    // Store values rather than scene references: markers are destroyed by LoadScene.
-    // This pending snapshot is consumed once by the next matching scene instance.
-    private static bool hasPendingRespawn;
-    private static string pendingScenePath;
-    private static bool pendingAlternateSpawn;
-    private static Vector3 pendingPosition;
-    private static Quaternion pendingRotation;
+    [Header("Game Over")]
+    public TextMeshProUGUI gameOverText;
+    public float restartDelay = 2f;
 
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-    private static void ResetRespawnState()
-    {
-        // Also reset when entering Play with domain reload disabled in the Unity Editor.
-        hasPendingRespawn = false;
-        pendingScenePath = null;
-    }
+    [Header("Fall Detection")]
+    public bool killOnFall = true;
+    public float killHeight = -20f;
+
+    private enum State { Playing, Respawning, GameOver }
+    private State state = State.Playing;
+    private float nextActionTime;
+    private bool wasKinematic;
+    private bool[] originalControlStates;
 
     void Start()
     {
-        PlacePlayerAtSpawn();
-
         if (playerLife == null && player != null)
-        {
             playerLife = player.GetComponent<Life>();
-        }
 
-        if (playerLife != null)
-        {
-            playerLife.onDeath.AddListener(GameOver);
-        }
-        
-        // Ensure the game over text is hidden when the level starts
-        if (gameOverText != null)
-        {
-            gameOverText.gameObject.SetActive(false);
-        }
-    }
+        if (player == null && playerLife != null)
+            player = playerLife.transform;
 
-    private void Update()
-    {
-        if (!killOnFall || gameOverStarted || playerLife == null || Time.timeScale == 0f)
+        if (playerRigidbody == null && player != null)
+            playerRigidbody = player.GetComponent<Rigidbody>();
+
+        if (playerLife == null)
         {
+            Debug.LogError("GameManager needs a Player Life reference.");
+            enabled = false;
             return;
         }
 
-        Transform playerTransform = player != null ? player : playerLife.transform;
-        if (playerTransform.position.y < killHeight)
+        lives = maxLives;
+        startingHealth = playerLife.amount;
+        originalControlStates = new bool[controlScripts.Length];
+        MoveToSpawn();
+        playerLife.onDeath.AddListener(HandleDeath);
+        if (gameOverText != null)
+            gameOverText.gameObject.SetActive(false);
+    }
+
+    void Update()
+    {
+        if (state == State.Respawning &&
+            Time.time >= nextActionTime)
         {
-            // Let Life invoke the same death event used by damage from enemies.
+            MoveToSpawn();
+            playerLife.Revive(startingHealth);
+            SetControls(true);
+            state = State.Playing;
+        }
+        else if (state == State.GameOver &&
+                 Time.time >= nextActionTime)
+        {
+            SceneManager.LoadScene(
+                SceneManager.GetActiveScene().name);
+        }
+        else if (state == State.Playing &&
+                 killOnFall && player != null &&
+                 player.position.y < killHeight)
+        {
             playerLife.amount = 0f;
         }
     }
 
-    private void PlacePlayerAtSpawn()
+    private void HandleDeath()
     {
-        Transform playerTransform = player != null ? player : playerLife != null ? playerLife.transform : null;
-        bool restoringRespawn = hasPendingRespawn && pendingScenePath == gameObject.scene.path;
-        if (restoringRespawn)
+        if (state != State.Playing) return;
+        lives--;
+        if (heartUI != null) heartUI.LoseHeart();
+        // Freeze player and camera controls
+        SetControls(false);
+        if (lives > 0)
         {
-            useAlternateSpawn = pendingAlternateSpawn;
-        }
-        Transform spawn = useAlternateSpawn ? alternateSpawn : normalSpawn;
-        Vector3 position = restoringRespawn ? pendingPosition : spawn != null ? spawn.position : Vector3.zero;
-        Quaternion rotation = restoringRespawn ? pendingRotation : spawn != null ? spawn.rotation : Quaternion.identity;
-        hasPendingRespawn = false;
-
-        // Keep the scene's existing player position until spawn markers are assigned.
-        if (!restoringRespawn && spawn == null)
-        {
-            if (useAlternateSpawn)
-            {
-                Debug.LogWarning("Alternate spawn is selected, but no Alternate Spawn marker is assigned.", this);
-            }
-            return;
-        }
-
-        if (playerTransform == null)
-        {
-            Debug.LogWarning("Assign Player or Player Life to use the spawn markers.", this);
-            return;
-        }
-
-        if (playerTransform.TryGetComponent<Rigidbody>(out var body))
-        {
-            body.position = position;
-            body.rotation = rotation;
-            body.velocity = Vector3.zero;
-            body.angularVelocity = Vector3.zero;
+            state = State.Respawning;
+            nextActionTime = Time.time + respawnDelay;
         }
         else
         {
-            playerTransform.SetPositionAndRotation(position, rotation);
+            state = State.GameOver;
+            nextActionTime = Time.time + restartDelay;
+
+            if (Camera.main != null)
+                Camera.main.transform.SetParent(null);
+            if (gameOverText != null)
+                gameOverText.gameObject.SetActive(true);
         }
     }
 
-    private void GameOver()
+    private void SetControls(bool enable)
     {
-        if (gameOverStarted)
+        for (int i = 0; i < controlScripts.Length; i++)
         {
-            return;
-        }
-        gameOverStarted = true;
-
-        // Scene reloads restore serialized Inspector values. Carry the selected
-        // marker's pose across this reload, including markers assigned during Play.
-        Transform spawn = useAlternateSpawn ? alternateSpawn : normalSpawn;
-        if (spawn != null)
-        {
-            pendingScenePath = gameObject.scene.path;
-            pendingAlternateSpawn = useAlternateSpawn;
-            pendingPosition = spawn.position;
-            pendingRotation = spawn.rotation;
-            hasPendingRespawn = true;
+            if (controlScripts[i] == null) continue;
+            if (!enable) {
+                originalControlStates[i] = controlScripts[i].enabled;
+            }
+            controlScripts[i].enabled =
+                enable ? originalControlStates[i] : false;
         }
 
-        // Detach the camera from the player so it doesn't get turned off
-        if (Camera.main != null)
+        if (playerRigidbody != null)
         {
-            Camera.main.transform.SetParent(null);
-        }
+            if (!enable)
+            {
+                wasKinematic = playerRigidbody.isKinematic;
 
-        // Show the Game Over text on the screen
-        if (gameOverText != null)
-        {
-            gameOverText.gameObject.SetActive(true);
-        }
+                if (!wasKinematic)
+                {
+                    playerRigidbody.velocity = Vector3.zero;
+                    playerRigidbody.angularVelocity = Vector3.zero;
+                }
 
-        // Give the game-over text and independently spawned death particles time to display.
-        StartCoroutine(ReloadSceneRoutine());
+                playerRigidbody.isKinematic = true;
+            }
+            else
+            {
+                playerRigidbody.isKinematic = wasKinematic;
+            }
+        }
     }
 
-    // A Coroutine that waits for a few seconds, then executes code
-    private IEnumerator ReloadSceneRoutine()
+    private void MoveToSpawn()
     {
-        yield return new WaitForSeconds(restartDelay);
-        
-        // Find the name of the current scene and load it again
-        Scene currentScene = SceneManager.GetActiveScene();
-        SceneManager.LoadScene(currentScene.name);
+        Transform spawn = useAlternateSpawn
+            ? alternateSpawn : normalSpawn;
+
+        if (spawn == null || player == null) return;
+
+        if (playerRigidbody != null)
+        {
+            playerRigidbody.position = spawn.position;
+            playerRigidbody.rotation = spawn.rotation;
+
+            if (!playerRigidbody.isKinematic)
+            {
+                playerRigidbody.velocity = Vector3.zero;
+                playerRigidbody.angularVelocity = Vector3.zero;
+            }
+        }
+        else
+        {
+            player.SetPositionAndRotation(
+                spawn.position, spawn.rotation);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (playerLife != null)
+            playerLife.onDeath.RemoveListener(HandleDeath);
     }
 }

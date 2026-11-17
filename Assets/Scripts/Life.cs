@@ -1,41 +1,86 @@
+
 /*
  * Life.cs
  * Team members: Ethan Chang, Ryan Wu, Steven Tan
- * Purpose: Tracks health and runs death effects and events once before destroying the object.
+ * Purpose: Tracks health, triggers death effects,
+ * hides player on death, and allows respawning.
  */
 
-using System.Collections;
-using System.Collections.Generic;
-using System.Threading;
 using UnityEngine;
 using UnityEngine.Events;
 
-public class Life : MonoBehaviour {
+public class Life : MonoBehaviour
+{
     [Header("Health")]
-    [Tooltip("Remaining health. Reaching zero or less triggers death on the next Update.")]
+    [Tooltip("Remaining health. Reaching zero triggers death.")]
     public float amount;
+
     [Header("Death Events and Effects")]
     public UnityEvent onDeath;
-    [Tooltip("Optional particle-effect prefab spawned independently at this object's position on death.")]
+
+    [Tooltip("Particle effect spawned independently on death.")]
     public GameObject deathEffectPrefab;
+
     public AudioSource deathEffect;
 
-    private bool isDead;
+    [Header("Player Visibility")]
+    [Tooltip("Child GameObject containing the visible player model.")]
+    public GameObject playerModel;
 
-    void Update() {
-        if (!isDead && amount <= 0) {
-            // Set the guard before invoking callbacks so death cannot run twice.
+    private bool isDead = false;
+
+    void Update()
+    {
+        if (!isDead && amount <= 0)
+        {
+            // Prevent death from triggering repeatedly
             isDead = true;
-            if (deathEffectPrefab != null) {
-                // No parent: the effect survives this object's destruction.
-                Instantiate(deathEffectPrefab, transform.position, Quaternion.identity);
-                deathEffect.Play();
+
+            // Spawn independent death particles
+            if (deathEffectPrefab != null)
+            {
+                Instantiate(
+                    deathEffectPrefab,
+                    transform.position,
+                    Quaternion.identity
+                );
             }
-            if (onDeath != null) {
-                onDeath.Invoke();
+
+            // Play death sound independently
+            if (deathEffect != null && deathEffect.clip != null)
+            {
+                AudioSource.PlayClipAtPoint(
+                    deathEffect.clip,
+                    transform.position
+                );
             }
-            //Thread.Sleep(1000);
-            Destroy(gameObject);
+
+            // Hide player model
+            if (playerModel != null)
+            {
+                playerModel.SetActive(false);
+            }
+
+            // Notify GameManager
+            onDeath?.Invoke();
+
+            // Do not destroy the player
+        }
+    }
+
+    // Called by GameManager when respawning
+    public void Revive(float restoredHealth)
+    {
+        // Restore health
+        amount = restoredHealth;
+
+        // Allow future deaths
+        isDead = false;
+
+        // Make player visible again
+        if (playerModel != null)
+        {
+            playerModel.SetActive(true);
         }
     }
 }
