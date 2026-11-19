@@ -104,7 +104,6 @@ public class PlayerMovement : MonoBehaviour {
         movementInput = Vector2.ClampMagnitude(value.Get<Vector2>(), 1f);
         bool isMoving = movementInput.sqrMagnitude > 0.01f;
         animator.SetBool("isWalking", isMoving);
-        Debug.Log(isMoving);
     }
 
     public void OnSprint(InputValue value) {
@@ -156,10 +155,39 @@ public class PlayerMovement : MonoBehaviour {
         return false;
     }
 
+    private Vector3 RemoveWallVelocity(Vector3 velocity) {
+        if (velocity.sqrMagnitude < 0.001f) {
+            return velocity;
+        }
+
+        Vector3 direction = velocity.normalized;
+
+        // Calculate capsule dimensions in world space.
+        Vector3 center = playerCollider.transform.TransformPoint(playerCollider.center);
+        float scale = Mathf.Max(playerCollider.transform.lossyScale.x, playerCollider.transform.lossyScale.z);
+
+        float radius = playerCollider.radius * scale;
+        float height = Mathf.Max(playerCollider.height * playerCollider.transform.lossyScale.y, radius * 2f);
+
+        Vector3 up = playerCollider.transform.up;
+        float halfSegment = height * 0.5f - radius;
+
+        Vector3 point1 = center + up * halfSegment;
+        Vector3 point2 = center - up * halfSegment;
+
+        if (Physics.CapsuleCast(point1, point2, radius * 0.95f, direction, out RaycastHit hit, 0.2f)) {
+            // Only handle walls, not floors or ceilings.
+            if (Mathf.Abs(hit.normal.y) <= 0.1f &&
+                Vector3.Dot(velocity, hit.normal) < 0f) {
+                velocity = Vector3.ProjectOnPlane(velocity, hit.normal);
+            }
+        }
+        return velocity;
+    }
+
     public void OnJump(InputValue value) {
         jumpHeld = value.isPressed;
         animator.SetBool("isJumping", true);
-        Debug.Log("Jumping is true");
     }
 
     void Update() {
@@ -226,7 +254,8 @@ public class PlayerMovement : MonoBehaviour {
                 airAcceleration * Time.fixedDeltaTime);
             playerBody.velocity = new Vector3(horizontalVelocity.x, playerBody.velocity.y, horizontalVelocity.z);
         }
-        
+        playerBody.velocity = RemoveWallVelocity(playerBody.velocity);
+
         // Apply horizontal rotation to the Rigidbody (this rotates the camera as well with respect to pivot).
         float yaw = yawInput * rotationSpeed;
         playerBody.MoveRotation(playerBody.rotation * Quaternion.Euler(0f, yaw, 0f));
@@ -245,7 +274,6 @@ public class PlayerMovement : MonoBehaviour {
         else if (animator.GetBool("isJumping") && playerBody.velocity.y <= 0f && grounded)
         {
             animator.SetBool("isJumping", false);
-            Debug.Log("Jumping: False");
         }
         // Recheck after draining stamina so the sprint animation ends on the exhaustion frame.
         isSprinting = sprintHeld && !isSprintExhausted && stamina > 0f && movementInput.sqrMagnitude > 0.01f;
