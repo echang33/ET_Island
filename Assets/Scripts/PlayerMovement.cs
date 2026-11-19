@@ -12,18 +12,21 @@ using UnityEngine.Rendering;
 using UnityEngine.UI;
 
 public class PlayerMovement : MonoBehaviour {
-    [Header("Ground Movement")]
-    [Tooltip("Normal horizontal movement speed in units per second.")]
+    [Header("Movement Speed")]
     public float speed;
-    [Tooltip("Movement speed multiplier while holding Sprint.")]
+    public float climbSpeed = 10f;
     [Min(1f)] public float sprintMultiplier = 1.5f;
+
     [Header("Sprint Stamina")]
     [Tooltip("Stamina capacity measured in seconds of continuous sprinting.")]
     [Min(0.01f)] public float sprintDuration = 5f;
+    
     [Tooltip("Seconds to wait after Sprint is released before stamina can refill.")]
     [Min(0f)] public float staminaRegenDelay = 1f;
+    
     [Tooltip("Seconds to refill an empty stamina bar after the delay.")]
     [Min(0.01f)] public float staminaRefillTime = 5f;
+    
     [Tooltip("Optional custom UI Slider. A bar is created automatically if empty.")]
     public Slider sprintBar;
 
@@ -34,6 +37,7 @@ public class PlayerMovement : MonoBehaviour {
     [Header("Sprint Motion Blur")]
     [Tooltip("Optional dedicated sprint blur Volume. Assign the object from the scene Hierarchy, not a prefab asset.")]
     public Volume sprintBlurVolume;
+
     [Tooltip("Volume weight change per second. Higher values fade the blur faster.")]
     [Min(0.01f)] public float blurFadeSpeed = 5f;
 
@@ -79,6 +83,11 @@ public class PlayerMovement : MonoBehaviour {
     private bool jumpHeld = false;
     private bool isSprinting = false;
 
+    // Ladders
+    public Ladder curLadder;
+    private bool isClimbing = false;
+    private bool previousUseGravity;
+
     Animator animator;
     private void Awake() {
         playerBody = GetComponent<Rigidbody>();
@@ -98,6 +107,43 @@ public class PlayerMovement : MonoBehaviour {
             main.loop = true;
             sprintParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         }
+    }
+
+    public void OnInteract(InputValue value) {
+        if (!value.isPressed) return;
+
+        if (isClimbing) {
+            StopClimbing();
+        } else if (curLadder != null) {
+            StartClimbing();
+        }
+    }
+
+    private void StartClimbing() {
+        isClimbing = true;
+        Debug.Log("Start Climbing");
+
+        previousUseGravity = playerBody.useGravity;
+        playerBody.useGravity = false;
+        playerBody.velocity = Vector3.zero;
+
+        Vector3 position = playerBody.position;
+        Vector3 colliderCenter = playerCollider.bounds.center;
+
+        position.x += curLadder.CenterX - colliderCenter.x;
+        position.z += curLadder.CenterZ - colliderCenter.z;
+
+        playerBody.position = position;
+    }
+
+    private void StopClimbing() {
+        isClimbing = false;
+        Debug.Log("Stop Climbing");
+
+        playerBody.useGravity = previousUseGravity;
+        playerBody.velocity = Vector3.zero;
+
+        curLadder = null;
     }
     
     public void OnMove(InputValue value) {
@@ -175,7 +221,7 @@ public class PlayerMovement : MonoBehaviour {
         Vector3 point1 = center + up * halfSegment;
         Vector3 point2 = center - up * halfSegment;
 
-        if (Physics.CapsuleCast(point1, point2, radius * 0.95f, direction, out RaycastHit hit, 0.2f)) {
+        if (Physics.CapsuleCast(point1, point2, radius * 0.95f, direction, out RaycastHit hit, 0.2f, ~0, QueryTriggerInteraction.Ignore)) {
             // Only handle walls, not floors or ceilings.
             if (Mathf.Abs(hit.normal.y) <= 0.1f &&
                 Vector3.Dot(velocity, hit.normal) < 0f) {
@@ -202,6 +248,19 @@ public class PlayerMovement : MonoBehaviour {
     }
 
     void FixedUpdate() {
+        // Apply horizontal rotation to the Rigidbody (this rotates the camera as well with respect to pivot).
+        float yaw = yawInput * rotationSpeed;
+        playerBody.MoveRotation(playerBody.rotation * Quaternion.Euler(0f, yaw, 0f));
+
+        // Consume mouse input after applying it.
+        yawInput = 0f;
+        
+        // If in climbing mode, don't process other player movements.
+        if (isClimbing) {
+            HandleClimbing();
+            return;
+        }
+        
         // Ignore the ground probe while rising so takeoff cannot count as grounded.
         bool grounded = playerBody.velocity.y <= 0.1f && IsGrounded();
         // Read the held state directly so a missed release callback cannot leave sprint on.
@@ -256,13 +315,6 @@ public class PlayerMovement : MonoBehaviour {
         }
         playerBody.velocity = RemoveWallVelocity(playerBody.velocity);
 
-        // Apply horizontal rotation to the Rigidbody (this rotates the camera as well with respect to pivot).
-        float yaw = yawInput * rotationSpeed;
-        playerBody.MoveRotation(playerBody.rotation * Quaternion.Euler(0f, yaw, 0f));
-
-        // Consume mouse input after applying it.
-        yawInput = 0f;
-
         // Extra gravity (allows player to fall faster)
         playerBody.AddForce(Physics.gravity * (gravityMultiplier - 1f), ForceMode.Acceleration);
 
@@ -278,6 +330,24 @@ public class PlayerMovement : MonoBehaviour {
         // Recheck after draining stamina so the sprint animation ends on the exhaustion frame.
         isSprinting = sprintHeld && !isSprintExhausted && stamina > 0f && movementInput.sqrMagnitude > 0.01f;
         animator.SetBool("isSprinting", isSprinting);
+    }
+
+    private void HandleClimbing() {
+        if (curLadder == null) {
+            StopClimbing();
+            return;
+        }
+        float input = movementInput.y;
+
+        float centerOffset = playerCollider.bounds.center.y - playerBody.position.y;
+        float halfHeight = playerCollider.bounds.extents.y;
+
+        float bottomY = curLadder.Bottom + halfHeight - centerOffset;
+        float topY = curLadder.Top - halfHeight - centerOffset;
+
+        Vector3 position = playerBody.position;
+        position.y += input * climbSpeed * Time.fixedDeltaTime;
+        playerBody.MovePosition(position);
     }
 
     private void UpdateSprintBlur() {

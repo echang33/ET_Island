@@ -571,64 +571,76 @@ public class BSPGenerator : MonoBehaviour {
             }
         }
 
-        // Generate ramps to elevated openings.
+        
         foreach (var hole in holes) {
-            if (axis == 1) continue;
-
-            // Determine the horizontal width and bottom of the opening.
-            float rampWidth;
-            float openingBottom;
-            if (axis == 0) {
-                // X-normal wall: horizontal direction is Z, vertical is Y.
-                rampWidth = hole.vMax - hole.vMin;
-                openingBottom = hole.uMin;
+            if (axis == 1) {
+                // Generate ladder to ceiling opening
+                if (plane > region.Center[1]) {
+                    GameObject ladder_obj = new GameObject("Ladder");
+                    Ladder ladder = ladder_obj.AddComponent<Ladder>();
+                    ladder.transform.SetParent(generatedRoot, false);
+                    ladder.transform.localPosition = new Vector3((hole.uMin + hole.uMax) * 0.5f, roomMin[1], (hole.vMin + hole.vMax) * 0.5f);
+                    ladder.height = roomMax[1] - roomMin[1] + 2f;
+                    ladder.GenerateLadder();
+                }
             } else {
-                // Z-normal wall: horizontal direction is X, vertical is Y.
-                rampWidth = hole.uMax - hole.uMin;
-                openingBottom = hole.vMin;
+                // Generate ramps to elevated openings.
+
+                // Determine the horizontal width and bottom of the opening.
+                float rampWidth;
+                float openingBottom;
+                if (axis == 0) {
+                    // X-normal wall: horizontal direction is Z, vertical is Y.
+                    rampWidth = hole.vMax - hole.vMin;
+                    openingBottom = hole.uMin;
+                } else {
+                    // Z-normal wall: horizontal direction is X, vertical is Y.
+                    rampWidth = hole.uMax - hole.uMin;
+                    openingBottom = hole.vMin;
+                }
+
+                // Add wallThickness since roomMin / roomMax represent exterior room size.
+                float floorY = roomMin.y + wallThickness;
+                float rampHeight = openingBottom - floorY;
+
+                // No ramp needed if the opening low enough.
+                if (rampHeight <= minRampHeight) {
+                    continue;
+                }
+
+                // Determine which direction points out through this wall.
+                int direction = plane > region.Center[axis] ? 1 : -1;
+
+                // Position the ramp so its high end meets the wall.
+                Vector3 position = new Vector3(0, floorY, 0);
+                if (axis == 0) {
+                    position.z = (hole.vMin + hole.vMax) * 0.5f;
+                    position.x = plane - direction * (rampLength * 0.5f + wallThickness * 0.5f);
+                } else {
+                    position.x = (hole.uMin + hole.uMax) * 0.5f;
+                    position.z = plane - direction * (rampLength * 0.5f + wallThickness * 0.5f);
+                }
+
+                // Need to rotate ramp (local +Z is high end) to match opening
+                float rotationY = (axis == 0 ? (direction > 0 ? 90f : 270f) : (direction > 0 ? 0f : 180f));
+
+                GameObject ramp = new GameObject("Ramp");
+                ramp.transform.SetParent(generatedRoot, false);
+                ramp.transform.localPosition = position;
+
+                RampMesh rampMesh = ramp.AddComponent<RampMesh>();
+                rampMesh.width = rampWidth;
+                rampMesh.length = rampLength;
+                rampMesh.height = rampHeight;
+                rampMesh.rotationY = rotationY;
+                rampMesh.material = rampMaterial;
+                rampMesh.textureScale = textureScale;
+                rampMesh.Generate();
+
+                MeshCollider meshCollider = ramp.AddComponent<MeshCollider>();
+                meshCollider.sharedMesh = rampMesh.GetComponent<MeshFilter>().sharedMesh;
+                meshCollider.material = rampPhysicMaterial;
             }
-
-            // Add wallThickness since roomMin / roomMax represent exterior room size.
-            float floorY = roomMin.y + wallThickness;
-            float rampHeight = openingBottom - floorY;
-
-            // No ramp needed if the opening low enough.
-            if (rampHeight <= minRampHeight) {
-                continue;
-            }
-
-            // Determine which direction points out through this wall.
-            int direction = plane > region.Center[axis] ? 1 : -1;
-
-            // Position the ramp so its high end meets the wall.
-            Vector3 position = new Vector3(0, floorY, 0);
-            if (axis == 0) {
-                position.z = (hole.vMin + hole.vMax) * 0.5f;
-                position.x = plane - direction * (rampLength * 0.5f + wallThickness * 0.5f);
-            } else {
-                position.x = (hole.uMin + hole.uMax) * 0.5f;
-                position.z = plane - direction * (rampLength * 0.5f + wallThickness * 0.5f);
-            }
-
-            // Need to rotate ramp (local +Z is high end) to match opening
-            float rotationY = (axis == 0 ? (direction > 0 ? 90f : 270f) : (direction > 0 ? 0f : 180f));
-
-            GameObject ramp = new GameObject("Ramp");
-            ramp.transform.SetParent(generatedRoot, false);
-            ramp.transform.localPosition = position;
-
-            RampMesh rampMesh = ramp.AddComponent<RampMesh>();
-            rampMesh.width = rampWidth;
-            rampMesh.length = rampLength;
-            rampMesh.height = rampHeight;
-            rampMesh.rotationY = rotationY;
-            rampMesh.material = rampMaterial;
-            rampMesh.textureScale = textureScale;
-            rampMesh.Generate();
-
-            MeshCollider meshCollider = ramp.AddComponent<MeshCollider>();
-            meshCollider.sharedMesh = rampMesh.GetComponent<MeshFilter>().sharedMesh;
-            meshCollider.material = rampPhysicMaterial;
         }
     }
 
