@@ -70,16 +70,37 @@ public class BSPGenerator : MonoBehaviour {
         [Header("Room Materials")]
         public Material FloorMat;
         public Material WallMat;
+        [Header("Faces")]
+        public List<Face> MinFaces, MaxFaces;
 
         public Region(Vector3 min, Vector3 max) {
             Min = min;
             Max = max;
             FloorMat = new Material(Shader.Find("Standard"));
             WallMat = new Material(Shader.Find("Standard"));
+            MinFaces = new List<Face>();
+            MaxFaces = new List<Face>();
         }
 
         public Vector3 Size => Max - Min;
         public Vector3 Center => (Min + Max) * 0.5f;
+    }
+
+    [Serializable]
+    public struct Face {
+        public int Region;
+        public int Axis;
+        public int Dir; // Either -1 or +1
+        public float PlaneCoordinate;
+        public List<Edge> Edges;
+
+        public Face(int region, int axis, float planeCoordinate, int dir) {
+            Region = region;
+            Axis = axis;
+            PlaneCoordinate = planeCoordinate;
+            Dir = dir;
+            Edges = new List<Edge>();
+        }
     }
 
     [Serializable]
@@ -336,7 +357,6 @@ public class BSPGenerator : MonoBehaviour {
             // Randomly pick floor and wall materials
             region.FloorMat = floorMaterials[layoutRandom.Next(floorMaterials.Count)];
             region.WallMat = wallMaterials[layoutRandom.Next(wallMaterials.Count)];
-        
             leafRegions.Add(region);
             return;
         }
@@ -410,7 +430,6 @@ public class BSPGenerator : MonoBehaviour {
             if (!aBeforeB && !bBeforeA) continue;
 
             float plane = aBeforeB ? (a.Max[axis] + b.Min[axis]) * 0.5f : (b.Max[axis] + a.Min[axis]) * 0.5f;
-
             GetFaceAxes(axis, out int u, out int v);
 
             // Need to account for shrinkage border and wall thickness to get interior face regions.
@@ -458,6 +477,17 @@ public class BSPGenerator : MonoBehaviour {
 
         return false;
     }
+    
+    // Find all edges that connect to a face of a region.
+    private void AddFaceEdges(Face face) {
+        for (int i = 0; i < roomAdjacency[face.Region].Count; i++) {
+            Edge edge = edges[roomAdjacency[face.Region][i].Item2];
+            if (edge.Axis != face.Axis) continue;
+            if (ApproximatelyEqual(edge.PlaneCoordinate, face.PlaneCoordinate, adjacencyEpsilon)) {
+                face.Edges.Add(edge);
+            }
+        }
+    }
 
     // Generate labryinth rooms
     private void GenerateRooms() {
@@ -467,16 +497,18 @@ public class BSPGenerator : MonoBehaviour {
 
         for (int i = 0; i < leafRegions.Count; i++) {
             Region region = leafRegions[i];
-            // The min and max for each region represents the exterior volume for the region (including wall thickness).
-            Vector3 min = region.Min + Vector3.one * shrinkageBorder;
-            Vector3 max = region.Max - Vector3.one * shrinkageBorder;
-            if (min.x >= max.x || min.y >= max.y || min.z >= max.z) {
-                continue;
-            }
-
             for (int axis = 0; axis < 3; axis++) {
-                DrawRoomFace(i, axis, min[axis] + wallThickness * 0.5f, min, max);
-                DrawRoomFace(i, axis, max[axis] - wallThickness * 0.5f, min, max);
+                // Create Face objects for each region
+                Face minFace = new Face(i, axis, region.Min[axis], -1);
+                Face maxFace = new Face(i, axis, region.Max[axis], 1);
+                region.MinFaces.Add(minFace);
+                region.MaxFaces.Add(maxFace);
+                AddFaceEdges(minFace);
+                AddFaceEdges(maxFace);
+
+                // Draw faces
+                DrawRoomFace(minFace);
+                DrawRoomFace(maxFace);
             }
             GenerateRoomLight(i);
         }
@@ -494,37 +526,29 @@ public class BSPGenerator : MonoBehaviour {
         roomLight.transform.localPosition = lightPos;
     }
 
-    private void DrawRoomFace(int regionIndex, int axis, float plane, Vector3 roomMin, Vector3 roomMax) {
+    private void DrawRoomFace(Face face) {
+        int axis = face.Axis;
+        float plane = face.PlaneCoordinate - face.Dir * (shrinkageBorder + wallThickness * 0.5f);
+        Region region = leafRegions[face.Region];
+
+        // The min and max for each region represents the exterior volume for the region (including wall thickness).
+        Vector3 roomMin = region.Min + Vector3.one * shrinkageBorder;
+        Vector3 roomMax = region.Max - Vector3.one * shrinkageBorder;
+        
         GetFaceAxes(axis, out int u, out int v);
 
         float uMin = roomMin[u], uMax = roomMax[u];
         float vMin = roomMin[v], vMax = roomMax[v];
-
-        Region region = leafRegions[regionIndex];
         Material mat = (axis == 1 ? region.FloorMat : region.WallMat);
 
-        // Find all edges that connect to this face of this region.
-        List<Edge> faceEdges = new List<Edge>();
-        for (int i = 0; i < roomAdjacency[regionIndex].Count; i++) {
-            Edge edge = edges[roomAdjacency[regionIndex][i].Item2];
-            if (edge.Axis != axis) continue;
-
-            // The plane is drawn at an inset of shrinkageBorder and half of the wall thickness, whereas
-            // the edge plane is the original divider in the BSP. So the difference needs to account for these.
-            float diff = shrinkageBorder + wallThickness * 0.5f + adjacencyEpsilon;
-            if (ApproximatelyEqual(edge.PlaneCoordinate, plane, diff)) {
-                faceEdges.Add(edge);
-            }
-        }
-
         // No neighboring room on this face: draw a solid wall.
-        if (faceEdges.Count == 0) {
+        if (face.Edges.Count == 0) {
             CreateWallPanel(axis, plane, uMin, uMax, vMin, vMax, uMin, vMin, mat);
             return;
         }
 
         List<(float uMin, float uMax, float vMin, float vMax)> holes = new List<(float, float, float, float)>();
-        foreach (Edge edge in faceEdges) {
+        foreach (Edge edge in face.Edges) {
             holes.Add((edge.OpeningMin[u], edge.OpeningMax[u], edge.OpeningMin[v], edge.OpeningMax[v]));
         }
 
@@ -550,7 +574,6 @@ public class BSPGenerator : MonoBehaviour {
                     intervals.Add((hole.vMin, hole.vMax));
                 }
             }
-
             intervals.Sort((a, b) => a.min.CompareTo(b.min));
 
             // Merge overlapping openings and draw the solid gaps.
@@ -571,11 +594,10 @@ public class BSPGenerator : MonoBehaviour {
             }
         }
 
-        
         foreach (var hole in holes) {
             if (axis == 1) {
                 // Generate ladder to ceiling opening
-                if (plane > region.Center[1]) {
+                if (face.Dir > 0) {
                     GameObject ladder_obj = new GameObject("Ladder");
                     Ladder ladder = ladder_obj.AddComponent<Ladder>();
                     ladder.transform.SetParent(generatedRoot, false);
@@ -608,21 +630,18 @@ public class BSPGenerator : MonoBehaviour {
                     continue;
                 }
 
-                // Determine which direction points out through this wall.
-                int direction = plane > region.Center[axis] ? 1 : -1;
-
                 // Position the ramp so its high end meets the wall.
                 Vector3 position = new Vector3(0, floorY, 0);
                 if (axis == 0) {
                     position.z = (hole.vMin + hole.vMax) * 0.5f;
-                    position.x = plane - direction * (rampLength * 0.5f + wallThickness * 0.5f);
+                    position.x = plane - face.Dir * (rampLength * 0.5f + wallThickness * 0.5f);
                 } else {
                     position.x = (hole.uMin + hole.uMax) * 0.5f;
-                    position.z = plane - direction * (rampLength * 0.5f + wallThickness * 0.5f);
+                    position.z = plane - face.Dir * (rampLength * 0.5f + wallThickness * 0.5f);
                 }
 
                 // Need to rotate ramp (local +Z is high end) to match opening
-                float rotationY = (axis == 0 ? (direction > 0 ? 90f : 270f) : (direction > 0 ? 0f : 180f));
+                float rotationY = (axis == 0 ? (face.Dir > 0 ? 90f : 270f) : (face.Dir > 0 ? 0f : 180f));
 
                 GameObject ramp = new GameObject("Ramp");
                 ramp.transform.SetParent(generatedRoot, false);
