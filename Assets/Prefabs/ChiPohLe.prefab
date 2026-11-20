@@ -120,6 +120,9 @@ MonoBehaviour:
   staminaRefillTime: 5
   sprintBar: {fileID: 0}
   sprintParticles: {fileID: 0}
+  sprintGrunt: {fileID: 8300000, guid: 8fcbf2faa6048ae4f9891b395692847d, type: 3}
+  sprintGruntInterval: 2
+  sprintGruntVolume: 1
   sprintBlurVolume: {fileID: 0}
   blurFadeSpeed: 5
   rotationSpeed: 1

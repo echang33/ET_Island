@@ -1,8 +1,8 @@
 fileFormatVersion: 2
-guid: b40675ce96cd0584ab263e15d3100d47
+guid: 8fcbf2faa6048ae4f9891b395692847d
 AudioImporter:
   externalObjects: {}
-  serializedVersion: 8
+  serializedVersion: 7
   defaultSettings:
     serializedVersion: 2
     loadType: 0
@@ -11,9 +11,9 @@ AudioImporter:
     compressionFormat: 1
     quality: 1
     conversionMode: 0
-    preloadAudioData: 0
+    preloadAudioData: 1
   platformSettingOverrides: {}
-  forceToMono: 0
+  forceToMono: 1
   normalize: 1
   loadInBackground: 0
   ambisonic: 0
@@ -21,10 +21,3 @@ AudioImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 384690
-  packageName: TII 3 Steps Audio(SCI FI Package)
-  packageVersion: 1.0
-  assetPath: Assets/TII_SoundLibrary_3Steps/SCI-FI/TII_SCIFI_Showcase.wav
-  uploadId: 929690

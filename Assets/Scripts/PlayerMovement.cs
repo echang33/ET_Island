@@ -34,6 +34,15 @@ public class PlayerMovement : MonoBehaviour {
     [Tooltip("Optional looping particle effect that emits only while sprinting.")]
     public ParticleSystem sprintParticles;
 
+    [Header("Sprint Audio")]
+    public AudioClip sprintGrunt;
+    [Tooltip("Seconds between grunts while sprinting.")]
+    [Min(0.01f)] public float sprintGruntInterval = 2f;
+    [Range(0f, 1f)] public float sprintGruntVolume = 1f;
+
+    private AudioSource sprintAudioSource;
+    private float sprintGruntTimer;
+
     [Header("Sprint Motion Blur")]
     [Tooltip("Optional dedicated sprint blur Volume. Assign the object from the scene Hierarchy, not a prefab asset.")]
     public Volume sprintBlurVolume;
@@ -97,6 +106,11 @@ public class PlayerMovement : MonoBehaviour {
         Cursor.lockState = CursorLockMode.Locked;
         animator = GetComponent<Animator>();
         stamina = sprintDuration;
+        // Keep sprint audio separate so stopping it cannot cut off other player sounds.
+        sprintAudioSource = gameObject.AddComponent<AudioSource>();
+        sprintAudioSource.playOnAwake = false;
+        sprintAudioSource.loop = false;
+        sprintAudioSource.spatialBlend = 0f;
         InitializeSprintBar();
         if (sprintBlurVolume != null) {
             sprintBlurVolume.weight = 0f;
@@ -159,6 +173,10 @@ public class PlayerMovement : MonoBehaviour {
 
     private void OnDisable() {
         isSprinting = false;
+        sprintGruntTimer = 0f;
+        if (sprintAudioSource != null) {
+            sprintAudioSource.Stop();
+        }
         // The Volume may belong to the scene, so clear it before the player is destroyed.
         if (sprintBlurVolume != null) {
             sprintBlurVolume.weight = 0f;
@@ -245,6 +263,7 @@ public class PlayerMovement : MonoBehaviour {
         // Consume mouse input after applying it.
         pitchInput = 0f;
         UpdateSprintBlur();
+        UpdateSprintAudio();
     }
 
     void FixedUpdate() {
@@ -348,6 +367,25 @@ public class PlayerMovement : MonoBehaviour {
         Vector3 position = playerBody.position;
         position.y += input * climbSpeed * Time.fixedDeltaTime;
         playerBody.MovePosition(position);
+    }
+
+    private void UpdateSprintAudio() {
+        bool playGrunts = isSprinting && !isClimbing && stamina > 0f
+            && Application.isFocused && Time.timeScale > 0f
+            && playerInput != null && playerInput.isActiveAndEnabled;
+        if (!playGrunts || sprintGrunt == null) {
+            sprintGruntTimer = 0f;
+            sprintAudioSource.Stop();
+            return;
+        }
+
+        sprintGruntTimer -= Time.deltaTime;
+        if (sprintGruntTimer <= 0f) {
+            sprintAudioSource.clip = sprintGrunt;
+            sprintAudioSource.volume = sprintGruntVolume;
+            sprintAudioSource.Play();
+            sprintGruntTimer = Mathf.Max(0.01f, sprintGruntInterval);
+        }
     }
 
     private void UpdateSprintBlur() {
