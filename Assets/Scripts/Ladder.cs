@@ -40,7 +40,7 @@ public class Ladder : MonoBehaviour {
 
     private void OnTriggerExit(Collider other) {
         PlayerMovement player = other.GetComponent<PlayerMovement>();
-        if (player != null) {
+        if (player != null && player.curLadder == this) {
             player.curLadder = null;
         }
     }

@@ -581,11 +581,11 @@ MonoBehaviour:
     type: 3}
   edgePrefab: {fileID: 7416943251172266012, guid: c8bce5df0c378de47aec711976b34ae9,
     type: 3}
-  numNodes: 7
+  numNodes: 5
   ellipseMajorAxis: 300
   ellipseMinorAxis: 100
   edgeWidth: 6
-  edgeDensity: 0.5
+  edgeDensity: 0.3
   edgeContainer: {fileID: 5480482340487463078}
   vertexContainer: {fileID: 4914390539292528568}
   answerBox: {fileID: 2130360667587754547}

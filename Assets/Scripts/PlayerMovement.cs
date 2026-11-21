@@ -56,17 +56,10 @@ public class PlayerMovement : MonoBehaviour {
 
     private AudioSource jumpAudioSource;
     private Life playerLife;
-    private LadderPromptUI ladderPrompt;
+    private InteractPromptUI interactPrompt;
 
-    public bool CanShowLadderPrompt => isActiveAndEnabled && curLadder != null
-        && !isClimbing && Time.timeScale > 0f && Application.isFocused
-        && playerInput != null && playerInput.isActiveAndEnabled
-        && (playerLife == null || !playerLife.IsDead);
-
-    [ContextMenu("Reset Ladder Prompt")]
-    private void ResetLadderPrompt() {
-        LadderPromptUI.ResetSavedPreference();
-    }
+    public bool CanShowInteractPrompt => isActiveAndEnabled && (curLadder != null || (curPuzzle != null && curPuzzle.IsReady()))
+        && !isClimbing && Time.timeScale > 0f;
 
     [Header("Sprint Motion Blur")]
     [Tooltip("Optional dedicated sprint blur Volume. Assign the object from the scene Hierarchy, not a prefab asset.")]
@@ -117,6 +110,9 @@ public class PlayerMovement : MonoBehaviour {
     private bool jumpHeld = false;
     private bool isSprinting = false;
 
+    // Current puzzle in range
+    public PuzzleActivator curPuzzle;
+
     // Ladders
     public Ladder curLadder;
     private bool isClimbing = false;
@@ -146,8 +142,8 @@ public class PlayerMovement : MonoBehaviour {
         if (playerLife != null) {
             playerLife.onDeath.AddListener(StopGruntAudio);
         }
-        ladderPrompt = gameObject.AddComponent<LadderPromptUI>();
-        ladderPrompt.Initialize(this);
+        interactPrompt = gameObject.AddComponent<InteractPromptUI>();
+        interactPrompt.Initialize(this);
         InitializeSprintBar();
         if (sprintBlurVolume != null) {
             sprintBlurVolume.weight = 0f;
@@ -163,17 +159,19 @@ public class PlayerMovement : MonoBehaviour {
     public void OnInteract(InputValue value) {
         if (!value.isPressed) return;
 
+        if (curPuzzle != null && curPuzzle.IsReady()) {
+            curPuzzle.ActivatePuzzle(this);
+        }
+
         if (isClimbing) {
             StopClimbing();
         } else if (curLadder != null) {
-            ladderPrompt.Acknowledge();
             StartClimbing();
         }
     }
 
     private void StartClimbing() {
         isClimbing = true;
-        Debug.Log("Start Climbing");
 
         previousUseGravity = playerBody.useGravity;
         playerBody.useGravity = false;
@@ -190,12 +188,9 @@ public class PlayerMovement : MonoBehaviour {
 
     private void StopClimbing() {
         isClimbing = false;
-        Debug.Log("Stop Climbing");
 
         playerBody.useGravity = previousUseGravity;
         playerBody.velocity = Vector3.zero;
-
-        curLadder = null;
     }
     
     public void OnMove(InputValue value) {

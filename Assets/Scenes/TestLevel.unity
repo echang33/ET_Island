@@ -31311,7 +31311,7 @@ MonoBehaviour:
   boundsMin: {x: 0, y: 0, z: 0}
   boundsMax: {x: 400, y: 320, z: 400}
   outerRemoveBorder: 0.1
-  innerRemoveBorder: 0.25
+  innerRemoveBorder: 0.2
   minWidth: 30
   minHeight: 16
   minDepth: 30
@@ -31320,9 +31320,10 @@ MonoBehaviour:
   shrinkageBorder: 0
   wallThickness: 0.2
   openingSize: {x: 3, y: 3}
+  probCenterOpening: 0.5
   rampLength: 8
   minRampHeight: 0.5
-  seed: 42
+  seed: 67
   removePercent: 0.4
   rampMaterial: {fileID: 2100000, guid: 1ece3b589875df947bea02a53b9a61ed, type: 2}
   wallMaterials:
@@ -31340,6 +31341,8 @@ MonoBehaviour:
     type: 3}
   coreLightPrefab: {fileID: 5135327680834152236, guid: 21dd11a86a229054dbb982e8b5f31cc7,
     type: 3}
+  puzzlePrefab: {fileID: 1599437717939591198, guid: 8401e7efda21146ae86632e8d1bcdbca,
+    type: 3}
 --- !u!4 &1150894253
 Transform:
   m_ObjectHideFlags: 0
@@ -31349,7 +31352,7 @@ Transform:
   m_GameObject: {fileID: 1150894251}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -150}
+  m_LocalPosition: {x: 0, y: 0, z: -1000}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -41396,11 +41399,11 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_text: "\n\n- WASD \u2014 Move\n- Mouse \u2014 Look around\n- Space \u2014 Jump\n-
-    Hold Shift \u2014 Sprint; watch your stamina!\n- E \u2014 Engage or disengage
-    a ladder\n- W / S \u2014 Climb up or down while on a ladder\n- ESC / M \u2014
-    Pause Menu\n\nDodge the lasers, use parkour to avoid turret fire, and reach the
-    podium. Solve the NP puzzle to complete your training.\n\nStay sharp\u2014and
-    keep moving!"
+    Hold Shift \u2014 Sprint; watch your stamina!\n- E \u2014 Interact (engage /
+    disengage ladder, enter puzzle)\n- W / S \u2014 Climb up or down while on a ladder\n-
+    ESC / M \u2014 Pause Menu\n\nDodge the lasers, use parkour to avoid turret fire,
+    and reach the podium. Solve the NP puzzle to complete your training.\n\nStay
+    sharp\u2014and keep moving!"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -44563,7 +44566,7 @@ MonoBehaviour:
   respawnDelay: 1
   normalSpawn: {fileID: 16920974}
   alternateSpawn: {fileID: 1385896678}
-  useAlternateSpawn: 0
+  useAlternateSpawn: 1
   deathText: {fileID: 412257422}
   gameOverPanel: {fileID: 2052113080}
   gameOverRestartButton: {fileID: 688642533}

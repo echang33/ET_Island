@@ -95,16 +95,23 @@ Not applicable
 
 ### Project Checkpoint 3-4: Sound, UI, and Animation
 
-For the next checkpoint, we will add background music and sound effects for running, jumping, turrets shooting, etc. 
+~~For the next checkpoint, we will add background music and sound effects for running, jumping, turrets shooting, etc. ~~
 
-Regarding procedural generation, we will add doors between the holes connecting rooms, and procedurally generate puzzles in each room which open those doors when solved. We plan on animating the opening of those doors. We also plan on procedurally generating ladders to climb up between rooms, and making the central killswitch room accessible via doors from a few select rooms.
+~~Regarding procedural generation, we will add doors between the holes connecting rooms, and procedurally generate puzzles in each room which open those doors when solved.~~ We plan on animating the opening of those doors. ~~We also plan on procedurally generating ladders to climb up between rooms, and making the central killswitch room accessible via doors from a few select rooms.~~
 
 There are also some difficulties in procedural generation. Currently, there is no guarantee that generated slopes do not collide with each other, or that the generated slopes don't block other openings. As we procedurally generate more and more objects into each room, this will only become more difficult. We will spend some time researching approaches to get around this.
 
-### Project Part 4
-For the last part of the project, we plan to integrate the tutorial room and the procedurally generated room.
+- We didn't get to animating door openings or preventing colliding generations. We will finish this in the finishing touches.
 
-Also want to have a tutorial on how to solve clique problems
+### Project Part 4: Finishing Touches
+
+For the last part of the project, we plan on finishing up the procedurally generated rooms. We need to add turrets and some parkour into these rooms, and prevent major collisions from occuring in this generation. If this proves too difficult, we may simplify the procedural generation of the rooms (for example, have each room be only parkour or only turrets).
+
+Regardless, the final central room with the killswitch will be handmade, so that can have more complexity in terms of the types of obstacles. We will add many parkour platforms leading to the central killswitch, with lasers and turrets all over the place. This will be a difficult final level the player has to navigate to reach and pull the final killswitch.
+
+Also we will want to have a tutorial on how to solve NP-hard graph problems. We also need to polish up the game menu. Currently you still need to set the flag in the GameManager to switch between tutorial room and the actual game, so entering the actual data center needs to be accessible from the game menu.
+
+Lastly, following the later Unity chapters, we will add cutscenes to show the entire labryinth before the game starts, and a final cutscene for when Chi Poh-Le pulls the killswitch and beats the game.
 
 ## Development
 
@@ -179,7 +186,7 @@ There are many configurable parameters going into the generation algorithm descr
 
 **Player Movement:** 
 - A "sprint" mechanism was added. The player acivates sprinting by holding down left shift. There is a 5 second "stamina" bar for sprinting, which begins regeneration once the player has stopped sprinting for 1 second.
-- The 3rd person camera was overhauled to use Unity's Cinemachine package, which provides much more fluid camera tracking. It also has support for preventing the camera from clipping through walls, which is nice.
+- The 3rd person camera was overhauled to use Unity's Cinemachine package (https://docs.unity3d.com/Packages/com.unity.cinemachine@6.7/manual/index.html), which provides much more fluid camera tracking. It also has support for preventing the camera from clipping through walls, which is nice.
 - The player is now able to jump while on slopes as well, allowing navigation through the procedurally generated rooms.
 
 <img src="./Screenshots/sprint.png" alt="sprint" width="500">
@@ -233,8 +240,15 @@ Muzzle flash demo: https://github.com/user-attachments/assets/e1ef4e41-37aa-485d
 <img src="./Screenshots/Controls.png" alt="controls" width="500">
 <img src="./Screenshots/Lives.png" alt="lives" width="500">
 
-
 **Procedural Generation**
+* Added procedurally generated ladders, and special ladder climbing mode. When the player gets close enough to the ladder, a prompt shows up saying press E to interact. The player can press E to engage / disengage with the ladder.
+* Added procedurally generated puzzle stands and doors. When the player gets close enough to a puzzle stand, they can press E to enter the puzzle UI and solve it. If they solve the puzzle correctly, the doors will open.
+* Doors are also added to the border rooms. Some lead outside the labryinth (perhaps we should remove these in the future), and some lead into the central room. This makes the central room accessible, which will contain the final killswitch to beat the game.
+* Added textures for the procedurally generated rooms: https://assetstore.unity.com/packages/2d/textures-materials/sci-fi-texture-pack-2-42026
+
+<img src="./Screenshots/procedural2.png" alt="procedural2" width="500">
+<img src="./Screenshots/access_central_room.png" alt="access_central" width="500">
+<img src="./Screenshots/in_central_room.png" alt="in_central" width="500">
 
 **General Gameplay**
 * Added drop shadows to players and lasers to make it easier to pass obstacles
@@ -247,19 +261,17 @@ Muzzle flash demo: https://github.com/user-attachments/assets/e1ef4e41-37aa-485d
 
 <img src="./Screenshots/Ladder.png" alt="ladder" width="500">
 
-
-
-
 ## Instructions for Testing the Project
 
 - Open the Unity project and load the scene `TestLevel`.
 - To test the "Tutorial" level, make sure "Use Alternate Spawn" is unchecked under the GameManager Object. Check the box to spawn at the procedurally generated level.
 - Press the Play button in the Unity Editor to start the game.
 - Use **WASD** to move the player and **Space** to jump.
+- Press E when prompted near a ladder to engage in climbing mode. Press E again to disengage.
 - Hold **Left Shift** to sprint. The green bar represents sprint stamina; stop sprinting for 1 second to  regenerate.
 - Press M to open the pause menu 
 - Avoid laser beams and enemy turrets.
-- Touch or approach the puzzle terminal to activate a puzzle.
+- Approach the puzzle terminal and press E when prompted to activate a puzzle.
 - Enter your answer into the text field and submit it using `[submission control]`.
 - An incorrect answer activates stronger turret behavior, while a correct answer deactivates the turrets and removes existing projectiles.
 - Touching a laser or getting hit by a turret projectile kills the player and causes a respawn.

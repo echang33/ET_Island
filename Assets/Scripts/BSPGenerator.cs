@@ -36,6 +36,7 @@ public class BSPGenerator : MonoBehaviour {
     [Min(0f)] public float shrinkageBorder = 0;
     [Min(0.01f)] public float wallThickness = 0.2f;
     public Vector2 openingSize = new Vector2(2f, 2f);
+    public float probCenterOpening = 0.5f;
     
     [Header("Ramps")]
     public float rampLength = 2f;
@@ -49,6 +50,7 @@ public class BSPGenerator : MonoBehaviour {
 
     [Header("Materials")]
     public Material rampMaterial;
+    public Material doorMaterial;
     public List<Material> wallMaterials;
     public List<Material> floorMaterials;
     [Header("Surface Physics")]
@@ -56,14 +58,18 @@ public class BSPGenerator : MonoBehaviour {
     public PhysicMaterial wallPhysicMaterial;
     [Header("Texture Tiling")]
     [Tooltip("World units per texture repeat; must be nonzero.")]
-    public float textureScale = 1.0f;
+    public float textureScale = 10.0f;
 
     [Header("Lights")]
     public GameObject roomLightPrefab;
     public GameObject coreLightPrefab;
 
+    [Header("Puzzle Stand")]
+    public GameObject puzzlePrefab;
+
     [Serializable]
     public class Region {
+        public int Ind;
         [Header("Local Bounds")]
         public Vector3 Min;
         public Vector3 Max;
@@ -72,20 +78,21 @@ public class BSPGenerator : MonoBehaviour {
         public Material WallMat;
         [Header("Faces")]
         public List<Face> MinFaces, MaxFaces;
-        // Flag indicating if puzzle was solved in this room
-        public bool PuzzleSolved;
         // Turrets generated in the room
-        public List<EnemyFSM> turrets;
+        public List<EnemyFSM> Turrets;
+        // Puzzle activator for this room
+        public PuzzleActivator Puzzle;
 
         public Region(Vector3 min, Vector3 max) {
+            Ind = -1;
             Min = min;
             Max = max;
             FloorMat = new Material(Shader.Find("Standard"));
             WallMat = new Material(Shader.Find("Standard"));
             MinFaces = new List<Face>();
             MaxFaces = new List<Face>();
-            PuzzleSolved = false;
-            turrets = new List<EnemyFSM>();
+            Turrets = new List<EnemyFSM>();
+            Puzzle = null;
         }
 
         public Vector3 Size => Max - Min;
@@ -203,7 +210,9 @@ public class BSPGenerator : MonoBehaviour {
                 corner = cur;
             }
         }
-        spawn.position = generatedRoot.TransformPoint(corner.Center);
+        Vector3 spawnPoint = corner.Center;
+        spawnPoint[2] -= 10;
+        spawn.position = generatedRoot.TransformPoint(spawnPoint);
     }
 
     // Depth first search to check connectivity
@@ -305,6 +314,7 @@ public class BSPGenerator : MonoBehaviour {
         List<Region> newRegions = new List<Region>(newN);
         for (int i = 0; i < regionCount; i++) {
             if (vertexMap[i] != -1) {
+                leafRegions[i].Ind = newRegions.Count;
                 newRegions.Add(leafRegions[i]);
             }
         }
@@ -500,6 +510,31 @@ public class BSPGenerator : MonoBehaviour {
         }
     }
 
+    // Checks if face is adjacent to outside / central room. Generates opening with certain probability.
+    private void GenerateBorderOpening(Face face) {
+        if (face.Edges.Count == 0 && UnityEngine.Random.value < probCenterOpening) {
+            GetFaceAxes(face.Axis, out int u, out int v);
+            Region region = leafRegions[face.Region];
+            
+            // The min and max for each region represents the interior volume for the region.
+            Vector3 roomMin = region.Min + Vector3.one * (wallThickness + shrinkageBorder);
+            Vector3 roomMax = region.Max - Vector3.one * (wallThickness + shrinkageBorder);
+
+            Vector3 center = (roomMin + roomMax) * 0.5f;
+            Vector3 openingMin = center;
+            Vector3 openingMax = center;
+            openingMin[u] -= openingSize[0] * 0.5f;
+            openingMin[v] -= openingSize[1] * 0.5f;
+            openingMax[u] = openingMin[u] + openingSize[0];
+            openingMax[v] = openingMin[v] + openingSize[1];
+
+            Edge edge = new Edge(face.Region, -1, face.Axis, face.PlaneCoordinate, roomMin, roomMax, openingMin, openingMax); 
+            roomAdjacency[face.Region].Add((face.Region, edges.Count));  
+            edges.Add(edge);
+            face.Edges.Add(edge);
+        }
+    }
+
     // Generate labryinth rooms
     private void GenerateRooms() {
         GameObject root = new GameObject("Generated Labryinth");
@@ -516,6 +551,8 @@ public class BSPGenerator : MonoBehaviour {
                 region.MaxFaces.Add(maxFace);
                 AddFaceEdges(minFace);
                 AddFaceEdges(maxFace);
+                GenerateBorderOpening(minFace);
+                GenerateBorderOpening(maxFace);
 
                 // Draw faces
                 DrawRoomFace(minFace);
@@ -552,22 +589,11 @@ public class BSPGenerator : MonoBehaviour {
         float vMin = roomMin[v], vMax = roomMax[v];
         Material mat = (axis == 1 ? region.FloorMat : region.WallMat);
 
-        // No neighboring room on this face: draw a solid wall.
-        if (face.Edges.Count == 0) {
-            CreateWallPanel(axis, plane, uMin, uMax, vMin, vMax, uMin, vMin, mat);
-            return;
-        }
-
-        List<(float uMin, float uMax, float vMin, float vMax)> holes = new List<(float, float, float, float)>();
-        foreach (Edge edge in face.Edges) {
-            holes.Add((edge.OpeningMin[u], edge.OpeningMax[u], edge.OpeningMin[v], edge.OpeningMax[v]));
-        }
-
         // Partition the face at every opening's U boundaries.
         List<float> uCuts = new List<float> { uMin, uMax };
-        foreach (var hole in holes) {
-            uCuts.Add(hole.uMin);
-            uCuts.Add(hole.uMax);
+        foreach (Edge edge in face.Edges) {
+            uCuts.Add(edge.OpeningMin[u]);
+            uCuts.Add(edge.OpeningMax[u]);
         }
         uCuts.Sort();
 
@@ -580,9 +606,9 @@ public class BSPGenerator : MonoBehaviour {
 
             // Find every opening crossing this strip.
             List<(float min, float max)> intervals = new List<(float, float)>();
-            foreach (var hole in holes) {
-                if (midU > hole.uMin && midU < hole.uMax) {
-                    intervals.Add((hole.vMin, hole.vMax));
+            foreach (Edge edge in face.Edges) {
+                if (midU > edge.OpeningMin[u] && midU < edge.OpeningMax[u]) {
+                    intervals.Add((edge.OpeningMin[v], edge.OpeningMax[v]));
                 }
             }
             intervals.Sort((a, b) => a.min.CompareTo(b.min));
@@ -605,14 +631,16 @@ public class BSPGenerator : MonoBehaviour {
             }
         }
 
-        foreach (var hole in holes) {
+        foreach (Edge edge in face.Edges) {
+            float holeUMin = edge.OpeningMin[u]; float holeUMax = edge.OpeningMax[u];
+            float holeVMin = edge.OpeningMin[v]; float holeVMax = edge.OpeningMax[v];
             if (axis == 1) {
                 // Generate ladder to ceiling opening
                 if (face.Dir > 0) {
                     GameObject ladder_obj = new GameObject("Ladder");
                     Ladder ladder = ladder_obj.AddComponent<Ladder>();
                     ladder.transform.SetParent(generatedRoot, false);
-                    ladder.transform.localPosition = new Vector3((hole.uMin + hole.uMax) * 0.5f, roomMin[1], (hole.vMin + hole.vMax) * 0.5f);
+                    ladder.transform.localPosition = new Vector3((holeUMin + holeUMax) * 0.5f, roomMin[1], (holeVMin + holeVMax) * 0.5f);
                     ladder.height = roomMax[1] - roomMin[1] + 2f;
                     ladder.GenerateLadder();
                 }
@@ -624,12 +652,12 @@ public class BSPGenerator : MonoBehaviour {
                 float openingBottom;
                 if (axis == 0) {
                     // X-normal wall: horizontal direction is Z, vertical is Y.
-                    rampWidth = hole.vMax - hole.vMin;
-                    openingBottom = hole.uMin;
+                    rampWidth = holeVMax - holeVMin;
+                    openingBottom = holeUMin;
                 } else {
                     // Z-normal wall: horizontal direction is X, vertical is Y.
-                    rampWidth = hole.uMax - hole.uMin;
-                    openingBottom = hole.vMin;
+                    rampWidth = holeUMax - holeUMin;
+                    openingBottom = holeVMin;
                 }
 
                 // Add wallThickness since roomMin / roomMax represent exterior room size.
@@ -644,10 +672,10 @@ public class BSPGenerator : MonoBehaviour {
                 // Position the ramp so its high end meets the wall.
                 Vector3 position = new Vector3(0, floorY, 0);
                 if (axis == 0) {
-                    position.z = (hole.vMin + hole.vMax) * 0.5f;
+                    position.z = (holeVMin + holeVMax) * 0.5f;
                     position.x = plane - face.Dir * (rampLength * 0.5f + wallThickness * 0.5f);
                 } else {
-                    position.x = (hole.uMin + hole.uMax) * 0.5f;
+                    position.x = (holeUMin + holeUMax) * 0.5f;
                     position.z = plane - face.Dir * (rampLength * 0.5f + wallThickness * 0.5f);
                 }
 
@@ -671,37 +699,55 @@ public class BSPGenerator : MonoBehaviour {
                 meshCollider.sharedMesh = rampMesh.GetComponent<MeshFilter>().sharedMesh;
                 meshCollider.material = rampPhysicMaterial;
             }
-        }
 
-        foreach (Edge edge in face.Edges) {
+            // Draw doors for each opening
             if (edge.Door == null) {
                 GameObject door = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 door.name = "Door";
                 door.transform.SetParent(generatedRoot, false);
 
                 Vector3 center = Vector3.zero;
-                center[u] = (edge.OpeningMin[u] + edge.OpeningMax[u]) * 0.5f;
-                center[v] = (edge.OpeningMin[v] + edge.OpeningMax[v]) * 0.5f;
+                center[u] = (holeUMin + holeUMax) * 0.5f;
+                center[v] = (holeVMin + holeVMax) * 0.5f;
                 center[axis] = edge.PlaneCoordinate;
 
                 Vector3 size = Vector3.zero;
-                size[u] = (edge.OpeningMax[u] - edge.OpeningMin[u]);
-                size[v] = (edge.OpeningMax[v] - edge.OpeningMin[v]); 
-                size[axis] = (wallThickness + shrinkageBorder) * 2f;
+                size[u] = (holeUMax - holeUMin);
+                size[v] = (holeVMax - holeVMin); 
+
+                // If door is facing outside / inside, thickness is half
+                bool borderDoor = (edge.RegionB == -1);
+                if (borderDoor) {
+                    center[axis] -= face.Dir * wallThickness * 0.5f;
+                }
+                size[axis] = (wallThickness + shrinkageBorder) * (borderDoor ? 1f : 2f);
 
                 door.transform.localPosition = center;
                 door.transform.localRotation = Quaternion.identity;
                 door.transform.localScale = size;
+                door.GetComponent<Renderer>().sharedMaterial = doorMaterial;
 
                 edge.Door = door;
             }
         }
+
+        // Generate puzzle stand and turrets on floor
+        if (axis == 1 && face.Dir < 0) {
+            // For now generate puzzle stand at center
+            Vector3 center = new Vector3(region.Center[0], roomMin[1] + wallThickness, region.Center[2]);
+            GameObject puzzleStand = Instantiate(puzzlePrefab);
+            puzzleStand.transform.SetParent(generatedRoot, false);
+            puzzleStand.transform.localPosition = center;
+            PuzzleActivator activator = puzzleStand.GetComponentInChildren<PuzzleActivator>();
+            activator.InitBSP(this, region.Ind);
+            region.Puzzle = activator;
+        }
     }
 
     // Called by puzzle activator on success. Opens doors and deactivates turrets.
-    public void RoomCleared(int regionIndex) {
-        // Remove doors
+    public void ClearRoom(int regionIndex) {
         Region region = leafRegions[regionIndex];
+        // Remove doors
         for (int i = 0; i < roomAdjacency[regionIndex].Count; i++) {
             int edgeInd = roomAdjacency[regionIndex][i].Item2;
             Edge edge = edges[edgeInd];
@@ -712,7 +758,7 @@ public class BSPGenerator : MonoBehaviour {
             }
         }
         // Deactivate all turrets in room
-        foreach (EnemyFSM turret in region.turrets) {
+        foreach (EnemyFSM turret in region.Turrets) {
             turret.Deactivate();
         }
     }

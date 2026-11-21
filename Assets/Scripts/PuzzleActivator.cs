@@ -1,8 +1,3 @@
-/*
- * PuzzleActivator.cs
- * Team members: Ethan Chang, Ryan Wu, Steven Tan
- * Purpose: Opens a graph puzzle on player entry, pauses gameplay, and applies success or failure to turrets.
- */
 
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -10,152 +5,211 @@ using UnityEngine.InputSystem;
 public class PuzzleActivator : MonoBehaviour {
     [Header("Puzzle UI")]
     [SerializeField] private GameObject graphPuzzlePrefab;
+
     [Header("Affected Turrets")]
     [Tooltip("Turrets enraged by failure. Leave empty to affect all EnemyFSM turrets in the scene.")]
     [SerializeField] private EnemyFSM[] turrets;
+
+    private enum State {
+        Ready,
+        Active,
+        WaitingForExit
+    }
+
+    private State state = State.Ready;
+
     private GameObject activePuzzle;
-    private GameObject player;
-    private GraphUI puzzleUI;
-    private bool waitingForPlayerExit;
-    private Collider[] playerColliders;
-    private Collider[] activationColliders;
     private PlayerMovement playerMovement;
     private Life playerLife;
+    private PlayerInput playerInput;
+
+    private Collider[] playerColliders;
+    private Collider[] activationColliders;
+
     private float previousTimeScale;
     private bool inputWasEnabled;
 
-    // Reference to BSPGenerator, and the region (room) the puzzle activator belongs to
+    // After puzzle is solved, it cannot be activated again.
+    public bool solved;
+
+    // Reference to BSPGenerator and the region this activator belongs to.
     private BSPGenerator bspGen;
     private int region;
-
-    public void Awake() {
-        bspGen = null;
-        region = 0;
-    }
 
     public void InitBSP(BSPGenerator gen, int regionInd) {
         bspGen = gen;
         region = regionInd;
     }
 
-    private void OnTriggerEnter(Collider other) {
-        PlayerMovement enteringPlayer = other.GetComponentInParent<PlayerMovement>();
-        if (enteringPlayer == null || !enteringPlayer.CompareTag("Player")) {
-            return;
-        }
-        // Closing a puzzle does not rearm the trigger. The player must leave
-        // completely before entering again, including any extra player colliders.
-        if (activePuzzle != null || waitingForPlayerExit) {
-            return;
-        }
-        Life enteringLife = enteringPlayer.GetComponent<Life>();
-        PlayerInput playerInput = enteringPlayer.GetComponent<PlayerInput>();
-        // Damage callbacks can run before Life.Update processes the death.
-        if ((enteringLife != null && enteringLife.IsDead) || !enteringPlayer.isActiveAndEnabled
-            || playerInput == null || !playerInput.isActiveAndEnabled || Time.timeScale <= 0f) {
-            return;
-        }
-        player = enteringPlayer.gameObject;
-        playerMovement = enteringPlayer;
-        playerLife = enteringLife;
-        playerColliders = player.GetComponentsInChildren<Collider>(true);
-        activationColliders = GetComponentsInChildren<Collider>(true);
-        waitingForPlayerExit = true;
-        previousTimeScale = Time.timeScale;
-        inputWasEnabled = playerInput.enabled;
+    public bool IsReady() {
+        return state == State.Ready;
+    }
 
-        // Instantiate puzzle UI
+    private void OnTriggerEnter(Collider other) {
+        PlayerMovement player = other.GetComponent<PlayerMovement>();
+
+        if (player != null && state == State.Ready && !solved) {
+            player.curPuzzle = this;
+        }
+    }
+
+    private void OnTriggerExit(Collider other) {
+        PlayerMovement player = other.GetComponent<PlayerMovement>();
+
+        if (player != null && player.curPuzzle == this) {
+            player.curPuzzle = null;
+        }
+    }
+
+    public void ActivatePuzzle(PlayerMovement player) {
+        if (solved || state != State.Ready) {
+            return;
+        }
+
+        PlayerLifeSetup(player);
+
+        // Instantiate puzzle UI.
         activePuzzle = Instantiate(graphPuzzlePrefab);
-        puzzleUI = activePuzzle.GetComponentInChildren<GraphUI>();
+        GraphUI puzzleUI = activePuzzle.GetComponentInChildren<GraphUI>();
         puzzleUI.Initialize(this);
 
-        // Pause scaled simulation, but keep the UI responsive. PlayerInput is disabled separately.
+        // Pause gameplay and disable player input.
         Time.timeScale = 0f;
         playerInput.enabled = false;
 
-        // Unlock cursor so user can type in UI answer box
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
+
+        state = State.Active;
     }
 
-    private void FixedUpdate() {
-        if (!waitingForPlayerExit || activePuzzle != null || playerMovement == null
-            || !playerMovement.isActiveAndEnabled || (playerLife != null && playerLife.IsDead)) {
+    private void PlayerLifeSetup(PlayerMovement player) {
+        playerMovement = player;
+        playerLife = player.GetComponent<Life>();
+        playerInput = player.GetComponent<PlayerInput>();
+
+        // Damage callbacks can run before Life.Update processes death.
+        if ((playerLife != null && playerLife.IsDead)
+            || !player.isActiveAndEnabled
+            || playerInput == null || !playerInput.isActiveAndEnabled
+            || Time.timeScale <= 0f) {
+            playerMovement = null;
             return;
         }
 
-        // Kinematic changes during death can produce exit/enter callbacks even
-        // without leaving. Rearm only after a live player's body is really outside.
-        bool hasActivePlayerCollider = false;
+        playerColliders = player.GetComponentsInChildren<Collider>(true);
+        activationColliders = GetComponentsInChildren<Collider>(true);
+
+        previousTimeScale = Time.timeScale;
+        inputWasEnabled = playerInput.enabled;
+    }
+
+    private void FixedUpdate() {
+        if (state != State.WaitingForExit)
+            return;
+
+        if (playerMovement == null) {
+            state = State.Ready;
+            return;
+        }
+
+        if (IsPlayerInsideTrigger())
+            return;
+
+        state = State.Ready;
+    }
+
+    private bool IsPlayerInsideTrigger() {
+        bool hasActiveCollider = false;
+
         foreach (Collider body in playerColliders) {
-            if (body == null || !body.enabled || !body.gameObject.activeInHierarchy) continue;
-            hasActivePlayerCollider = true;
+            if (body == null || !body.enabled || !body.gameObject.activeInHierarchy)
+                continue;
+
+            hasActiveCollider = true;
+
             foreach (Collider trigger in activationColliders) {
                 if (trigger == null || !trigger.enabled || !trigger.isTrigger
                     || !trigger.gameObject.activeInHierarchy
-                    || trigger.GetComponentInParent<PuzzleActivator>() != this) continue;
+                    || trigger.GetComponentInParent<PuzzleActivator>() != this)
+                    continue;
+
                 if (body.bounds.Intersects(trigger.bounds)
-                    && Physics.ComputePenetration(body, body.transform.position, body.transform.rotation,
-                        trigger, trigger.transform.position, trigger.transform.rotation, out _, out _)) {
-                    return;
+                    && Physics.ComputePenetration(
+                        body, body.transform.position, body.transform.rotation,
+                        trigger, trigger.transform.position, trigger.transform.rotation,
+                        out _, out _)) {
+                    return true;
                 }
             }
         }
-        if (hasActivePlayerCollider) waitingForPlayerExit = false;
+
+        // No active player colliders means the player is no longer occupying the trigger.
+        return false;
     }
 
     public void CancelForPlayerDeath(Transform deadPlayer) {
-        if (player != null && deadPlayer != null && player == deadPlayer.gameObject) {
+        if (state == State.Active
+            && playerMovement != null
+            && deadPlayer == playerMovement.transform) {
             ClosePuzzle();
         }
     }
 
     public void ClosePuzzle() {
-        if (activePuzzle == null) return;
-        activePuzzle.SetActive(false);
+        if (state != State.Active)
+            return;
+
         Destroy(activePuzzle);
         activePuzzle = null;
 
-        // Restore gameplay
+        // Restore gameplay.
         Time.timeScale = previousTimeScale;
+
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
-        
-        PlayerInput playerInput = player.GetComponent<PlayerInput>();
+
         playerInput.enabled = inputWasEnabled;
+        state = State.WaitingForExit;
+    }
+
+    private EnemyFSM[] GetAffectedTurrets() {
+        if (turrets != null && turrets.Length > 0)
+            return turrets;
+
+        return FindObjectsByType<EnemyFSM>(
+            FindObjectsInactive.Include,
+            FindObjectsSortMode.None
+        );
     }
 
     public void SucceedPuzzle() {
-        EnemyFSM[] affectedTurrets = turrets;
-        if (affectedTurrets == null || affectedTurrets.Length == 0) {
-            affectedTurrets = FindObjectsByType<EnemyFSM>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-        }
+        if (bspGen != null)
+            bspGen.ClearRoom(region);
 
-        // Deactivate all turrets
-        foreach (EnemyFSM turret in affectedTurrets) {
-            if (turret != null) {
+        // Deactivate all affected turrets.
+        foreach (EnemyFSM turret in GetAffectedTurrets()) {
+            if (turret != null)
                 turret.Deactivate();
-            }
         }
 
-        // Remove bullets already in flight so deactivated turrets cannot cause a delayed hit.
-        ProjectileMovement[] projectiles = FindObjectsByType<ProjectileMovement>(FindObjectsSortMode.None);
+        // Remove projectiles already in flight.
+        ProjectileMovement[] projectiles =
+            FindObjectsByType<ProjectileMovement>(FindObjectsSortMode.None);
+
         foreach (ProjectileMovement projectile in projectiles) {
-            Destroy(projectile.gameObject);
+            if (projectile != null)
+                Destroy(projectile.gameObject);
         }
+
+        solved = true;
         ClosePuzzle();
     }
 
     public void FailPuzzle() {
-        EnemyFSM[] affectedTurrets = turrets;
-        if (affectedTurrets == null || affectedTurrets.Length == 0) {
-            affectedTurrets = FindObjectsByType<EnemyFSM>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-        }
-
-        foreach (EnemyFSM turret in affectedTurrets) {
-            if (turret != null) {
+        foreach (EnemyFSM turret in GetAffectedTurrets()) {
+            if (turret != null)
                 turret.ActivateSuperMode();
-            }
         }
 
         ClosePuzzle();
