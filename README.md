@@ -226,7 +226,7 @@ Muzzle flash demo: https://github.com/user-attachments/assets/e1ef4e41-37aa-485d
 **UI**
 * Added tutorial panel to the beginning of the run with instructions
 * Added a pause menu with "Resume," "Restart," "Controls," and "Quit." Controls brings up a screen to remind players of how to play the game.
-* Added a player icon and three hearts representing the three lives of the player. 
+* Added life system for main character that displays number of lives they have left
 
 <img src="./Screenshots/Tutorial.png" alt="tutorial" width="500">
 <img src="./Screenshots/PauseMenu.png" alt="pausemenu" width="500">
@@ -241,7 +241,9 @@ Muzzle flash demo: https://github.com/user-attachments/assets/e1ef4e41-37aa-485d
 * Instead of having to restart each time the player dies, they are teleported back to the room they just failed, with a maximum of 3 lives, once all 3 lives are expended they must restart the game
 * Pause Menu allows users to pause the game and restart whenever they choose 
 * Ladders: press "E" when near ladder to engage, "W" to climb up
-* Player gets 3 lives, after that the game ends and player has to restart.
+* Player gets 3 lives, after that the game ends and player has to restart
+* Fix bug with puzzleactivator where it immediately activates again if you fail a puzzle
+* Fixed movement bug that allowed player to stick to walls
 
 <img src="./Screenshots/Ladder.png" alt="ladder" width="500">
 
@@ -251,6 +253,7 @@ Muzzle flash demo: https://github.com/user-attachments/assets/e1ef4e41-37aa-485d
 ## Instructions for Testing the Project
 
 - Open the Unity project and load the scene `TestLevel`.
+- To test the "Tutorial" level, make sure "Use Alternate Spawn" is unchecked under the GameManager Object. Check the box to spawn at the procedurally generated level.
 - Press the Play button in the Unity Editor to start the game.
 - Use **WASD** to move the player and **Space** to jump.
 - Hold **Left Shift** to sprint. The green bar represents sprint stamina; stop sprinting for 1 second to  regenerate.

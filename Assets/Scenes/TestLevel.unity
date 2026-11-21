@@ -5205,9 +5205,10 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\n\n- WASD \u2014 Move\n- Mouse \u2014 Look around\n- Space \u2014 Jump\n-
     Hold Shift \u2014 Sprint; watch your stamina!\n- E \u2014 Engage or disengage
-    a ladder\n- W / S \u2014 Climb up or down while on a ladder\n- ESC/M \u2014 Pause
-    Menu\n\nDodge the lasers, use parkour to avoid turret fire, and reach the podium.
-    Solve the NP puzzle to complete your training.\n\nStay sharp\u2014and keep moving!"
+    a ladder\n- W / S \u2014 Climb up or down while on a ladder\n- ESC / M \u2014
+    Pause Menu\n\nDodge the lasers, use parkour to avoid turret fire, and reach the
+    podium. Solve the NP puzzle to complete your training.\n\nStay sharp\u2014and
+    keep moving!"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -41396,9 +41397,10 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\n\n- WASD \u2014 Move\n- Mouse \u2014 Look around\n- Space \u2014 Jump\n-
     Hold Shift \u2014 Sprint; watch your stamina!\n- E \u2014 Engage or disengage
-    a ladder\n- W / S \u2014 Climb up or down while on a ladder\n- ESC/M \u2014 Pause
-    Menu\n\nDodge the lasers, use parkour to avoid turret fire, and reach the podium.
-    Solve the NP puzzle to complete your training.\n\nStay sharp\u2014and keep moving!"
+    a ladder\n- W / S \u2014 Climb up or down while on a ladder\n- ESC / M \u2014
+    Pause Menu\n\nDodge the lasers, use parkour to avoid turret fire, and reach the
+    podium. Solve the NP puzzle to complete your training.\n\nStay sharp\u2014and
+    keep moving!"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}

@@ -4,8 +4,6 @@
  * Purpose: Opens a graph puzzle on player entry, pauses gameplay, and applies success or failure to turrets.
  */
 
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -18,17 +16,39 @@ public class PuzzleActivator : MonoBehaviour {
     private GameObject activePuzzle;
     private GameObject player;
     private GraphUI puzzleUI;
+    private bool waitingForPlayerExit;
+    private Collider[] playerColliders;
+    private Collider[] activationColliders;
+    private PlayerMovement playerMovement;
+    private Life playerLife;
+    private float previousTimeScale;
+    private bool inputWasEnabled;
 
     private void OnTriggerEnter(Collider other) {
-        if (!other.CompareTag("Player")) {
+        PlayerMovement enteringPlayer = other.GetComponentInParent<PlayerMovement>();
+        if (enteringPlayer == null || !enteringPlayer.CompareTag("Player")) {
             return;
         }
-        player = other.gameObject;
-
-        // If puzzle is already ongoing, then don't do anything
-        if (activePuzzle != null) {
+        // Closing a puzzle does not rearm the trigger. The player must leave
+        // completely before entering again, including any extra player colliders.
+        if (activePuzzle != null || waitingForPlayerExit) {
             return;
         }
+        Life enteringLife = enteringPlayer.GetComponent<Life>();
+        PlayerInput playerInput = enteringPlayer.GetComponent<PlayerInput>();
+        // Damage callbacks can run before Life.Update processes the death.
+        if ((enteringLife != null && enteringLife.IsDead) || !enteringPlayer.isActiveAndEnabled
+            || playerInput == null || !playerInput.isActiveAndEnabled || Time.timeScale <= 0f) {
+            return;
+        }
+        player = enteringPlayer.gameObject;
+        playerMovement = enteringPlayer;
+        playerLife = enteringLife;
+        playerColliders = player.GetComponentsInChildren<Collider>(true);
+        activationColliders = GetComponentsInChildren<Collider>(true);
+        waitingForPlayerExit = true;
+        previousTimeScale = Time.timeScale;
+        inputWasEnabled = playerInput.enabled;
 
         // Instantiate puzzle UI
         activePuzzle = Instantiate(graphPuzzlePrefab);
@@ -37,7 +57,6 @@ public class PuzzleActivator : MonoBehaviour {
 
         // Pause scaled simulation, but keep the UI responsive. PlayerInput is disabled separately.
         Time.timeScale = 0f;
-        PlayerInput playerInput = player.GetComponent<PlayerInput>();
         playerInput.enabled = false;
 
         // Unlock cursor so user can type in UI answer box
@@ -45,19 +64,51 @@ public class PuzzleActivator : MonoBehaviour {
         Cursor.visible = true;
     }
 
-    public void ClosePuzzle() {
-        if (activePuzzle != null) {
-            Destroy(activePuzzle);
-            activePuzzle = null;
+    private void FixedUpdate() {
+        if (!waitingForPlayerExit || activePuzzle != null || playerMovement == null
+            || !playerMovement.isActiveAndEnabled || (playerLife != null && playerLife.IsDead)) {
+            return;
         }
 
+        // Kinematic changes during death can produce exit/enter callbacks even
+        // without leaving. Rearm only after a live player's body is really outside.
+        bool hasActivePlayerCollider = false;
+        foreach (Collider body in playerColliders) {
+            if (body == null || !body.enabled || !body.gameObject.activeInHierarchy) continue;
+            hasActivePlayerCollider = true;
+            foreach (Collider trigger in activationColliders) {
+                if (trigger == null || !trigger.enabled || !trigger.isTrigger
+                    || !trigger.gameObject.activeInHierarchy
+                    || trigger.GetComponentInParent<PuzzleActivator>() != this) continue;
+                if (body.bounds.Intersects(trigger.bounds)
+                    && Physics.ComputePenetration(body, body.transform.position, body.transform.rotation,
+                        trigger, trigger.transform.position, trigger.transform.rotation, out _, out _)) {
+                    return;
+                }
+            }
+        }
+        if (hasActivePlayerCollider) waitingForPlayerExit = false;
+    }
+
+    public void CancelForPlayerDeath(Transform deadPlayer) {
+        if (player != null && deadPlayer != null && player == deadPlayer.gameObject) {
+            ClosePuzzle();
+        }
+    }
+
+    public void ClosePuzzle() {
+        if (activePuzzle == null) return;
+        activePuzzle.SetActive(false);
+        Destroy(activePuzzle);
+        activePuzzle = null;
+
         // Restore gameplay
-        Time.timeScale = 1f;
+        Time.timeScale = previousTimeScale;
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
         
         PlayerInput playerInput = player.GetComponent<PlayerInput>();
-        playerInput.enabled = true;
+        playerInput.enabled = inputWasEnabled;
     }
 
     public void SucceedPuzzle() {

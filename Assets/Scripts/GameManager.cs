@@ -109,6 +109,10 @@ public class GameManager : MonoBehaviour
     private void HandleDeath()
     {
         if (state != State.Playing) return;
+        // A projectile may kill the player in the same physics step that opens
+        // a puzzle. Release that pause before respawn/game-over takes control.
+        foreach (PuzzleActivator activator in FindObjectsByType<PuzzleActivator>(FindObjectsSortMode.None))
+            activator.CancelForPlayerDeath(player);
         lives--;
         if (heartUI != null) heartUI.LoseHeart();
         // Freeze player and camera controls
