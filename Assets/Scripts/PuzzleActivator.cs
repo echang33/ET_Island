@@ -24,6 +24,20 @@ public class PuzzleActivator : MonoBehaviour {
     private float previousTimeScale;
     private bool inputWasEnabled;
 
+    // Reference to BSPGenerator, and the region (room) the puzzle activator belongs to
+    private BSPGenerator bspGen;
+    private int region;
+
+    public void Awake() {
+        bspGen = null;
+        region = 0;
+    }
+
+    public void InitBSP(BSPGenerator gen, int regionInd) {
+        bspGen = gen;
+        region = regionInd;
+    }
+
     private void OnTriggerEnter(Collider other) {
         PlayerMovement enteringPlayer = other.GetComponentInParent<PlayerMovement>();
         if (enteringPlayer == null || !enteringPlayer.CompareTag("Player")) {

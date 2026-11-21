@@ -63,7 +63,7 @@ public class BSPGenerator : MonoBehaviour {
     public GameObject coreLightPrefab;
 
     [Serializable]
-    public struct Region {
+    public class Region {
         [Header("Local Bounds")]
         public Vector3 Min;
         public Vector3 Max;
@@ -72,6 +72,10 @@ public class BSPGenerator : MonoBehaviour {
         public Material WallMat;
         [Header("Faces")]
         public List<Face> MinFaces, MaxFaces;
+        // Flag indicating if puzzle was solved in this room
+        public bool PuzzleSolved;
+        // Turrets generated in the room
+        public List<EnemyFSM> turrets;
 
         public Region(Vector3 min, Vector3 max) {
             Min = min;
@@ -80,6 +84,8 @@ public class BSPGenerator : MonoBehaviour {
             WallMat = new Material(Shader.Find("Standard"));
             MinFaces = new List<Face>();
             MaxFaces = new List<Face>();
+            PuzzleSolved = false;
+            turrets = new List<EnemyFSM>();
         }
 
         public Vector3 Size => Max - Min;
@@ -87,7 +93,7 @@ public class BSPGenerator : MonoBehaviour {
     }
 
     [Serializable]
-    public struct Face {
+    public class Face {
         public int Region;
         public int Axis;
         public int Dir; // Either -1 or +1
@@ -104,7 +110,7 @@ public class BSPGenerator : MonoBehaviour {
     }
 
     [Serializable]
-    public struct Edge {
+    public class Edge {
         [Header("Connected Room Indices")]
         public int RegionA;
         public int RegionB;
@@ -121,6 +127,10 @@ public class BSPGenerator : MonoBehaviour {
         public Vector3 OpeningMin;
         public Vector3 OpeningMax;
 
+        // Reference to door for this edge. Set to null if door is
+        // already open (from puzzle being solved).
+        public GameObject Door;
+
         public Edge(int a, int b, int axis, float plane, Vector3 overlapMin, 
                 Vector3 overlapMax, Vector3 openingMin, Vector3 openingMax) {
             RegionA = a;
@@ -131,6 +141,7 @@ public class BSPGenerator : MonoBehaviour {
             OverlapMax = overlapMax;
             OpeningMin = openingMin;
             OpeningMax = openingMax;
+            Door = null;
         }
     }
 
@@ -172,7 +183,7 @@ public class BSPGenerator : MonoBehaviour {
         Vector3 innerMin = boundsMin + (boundsMax - boundsMin) * innerRemoveBorder;
         Vector3 innerMax = boundsMin + (boundsMax - boundsMin) * (1 - innerRemoveBorder);
         RemoveRegionsRing(outerMin, outerMax, innerMin, innerMax);
-        
+
         // Generate rooms forming the labryinth
         GenerateRooms();
 
@@ -660,6 +671,49 @@ public class BSPGenerator : MonoBehaviour {
                 meshCollider.sharedMesh = rampMesh.GetComponent<MeshFilter>().sharedMesh;
                 meshCollider.material = rampPhysicMaterial;
             }
+        }
+
+        foreach (Edge edge in face.Edges) {
+            if (edge.Door == null) {
+                GameObject door = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                door.name = "Door";
+                door.transform.SetParent(generatedRoot, false);
+
+                Vector3 center = Vector3.zero;
+                center[u] = (edge.OpeningMin[u] + edge.OpeningMax[u]) * 0.5f;
+                center[v] = (edge.OpeningMin[v] + edge.OpeningMax[v]) * 0.5f;
+                center[axis] = edge.PlaneCoordinate;
+
+                Vector3 size = Vector3.zero;
+                size[u] = (edge.OpeningMax[u] - edge.OpeningMin[u]);
+                size[v] = (edge.OpeningMax[v] - edge.OpeningMin[v]); 
+                size[axis] = (wallThickness + shrinkageBorder) * 2f;
+
+                door.transform.localPosition = center;
+                door.transform.localRotation = Quaternion.identity;
+                door.transform.localScale = size;
+
+                edge.Door = door;
+            }
+        }
+    }
+
+    // Called by puzzle activator on success. Opens doors and deactivates turrets.
+    public void RoomCleared(int regionIndex) {
+        // Remove doors
+        Region region = leafRegions[regionIndex];
+        for (int i = 0; i < roomAdjacency[regionIndex].Count; i++) {
+            int edgeInd = roomAdjacency[regionIndex][i].Item2;
+            Edge edge = edges[edgeInd];
+            if (edge.Door != null) {
+                Destroy(edge.Door);
+                edge.Door = null;
+                edges[edgeInd] = edge;
+            }
+        }
+        // Deactivate all turrets in room
+        foreach (EnemyFSM turret in region.turrets) {
+            turret.Deactivate();
         }
     }
 
