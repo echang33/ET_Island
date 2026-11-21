@@ -120,9 +120,12 @@ MonoBehaviour:
   staminaRefillTime: 5
   sprintBar: {fileID: 0}
   sprintParticles: {fileID: 0}
+  sfxMixerGroup: {fileID: -8767906259891229438, guid: 6a5dcd593513a0f4abd46d7093a1f10b, type: 2}
   sprintGrunt: {fileID: 8300000, guid: 8fcbf2faa6048ae4f9891b395692847d, type: 3}
   sprintGruntInterval: 2
   sprintGruntVolume: 1
+  jumpGrunt: {fileID: 8300000, guid: 94bd7ac7cfd244e5843dbb7fadb5384a, type: 3}
+  jumpGruntVolume: 1
   sprintBlurVolume: {fileID: 0}
   blurFadeSpeed: 5
   rotationSpeed: 1
@@ -210,7 +213,7 @@ AudioSource:
   m_GameObject: {fileID: 4684430951476729174}
   m_Enabled: 1
   serializedVersion: 4
-  OutputAudioMixerGroup: {fileID: 0}
+  OutputAudioMixerGroup: {fileID: 7269564863137596160, guid: 6a5dcd593513a0f4abd46d7093a1f10b, type: 2}
   m_audioClip: {fileID: 8300000, guid: de1c7e4fe64d70b49a37acdd4381d04b, type: 3}
   m_Resource: {fileID: 8300000, guid: de1c7e4fe64d70b49a37acdd4381d04b, type: 3}
   m_PlayOnAwake: 1

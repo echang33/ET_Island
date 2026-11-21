@@ -7,6 +7,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Audio;
 using UnityEngine.InputSystem;
 using UnityEngine.Rendering;
 using UnityEngine.UI;
@@ -34,6 +35,11 @@ public class PlayerMovement : MonoBehaviour {
     [Tooltip("Optional looping particle effect that emits only while sprinting.")]
     public ParticleSystem sprintParticles;
 
+    [Header("Player Audio")]
+    [Tooltip("Mixer group used by both sprint and jump grunts.")]
+    [InspectorName("Grunt Mixer Group")]
+    public AudioMixerGroup sfxMixerGroup;
+
     [Header("Sprint Audio")]
     public AudioClip sprintGrunt;
     [Tooltip("Seconds between grunts while sprinting.")]
@@ -42,6 +48,13 @@ public class PlayerMovement : MonoBehaviour {
 
     private AudioSource sprintAudioSource;
     private float sprintGruntTimer;
+
+    [Header("Jump Audio")]
+    public AudioClip jumpGrunt;
+    [Range(0f, 1f)] public float jumpGruntVolume = 1f;
+
+    private AudioSource jumpAudioSource;
+    private Life playerLife;
 
     [Header("Sprint Motion Blur")]
     [Tooltip("Optional dedicated sprint blur Volume. Assign the object from the scene Hierarchy, not a prefab asset.")]
@@ -111,6 +124,16 @@ public class PlayerMovement : MonoBehaviour {
         sprintAudioSource.playOnAwake = false;
         sprintAudioSource.loop = false;
         sprintAudioSource.spatialBlend = 0f;
+        sprintAudioSource.outputAudioMixerGroup = sfxMixerGroup;
+        jumpAudioSource = gameObject.AddComponent<AudioSource>();
+        jumpAudioSource.playOnAwake = false;
+        jumpAudioSource.loop = false;
+        jumpAudioSource.spatialBlend = 0f;
+        jumpAudioSource.outputAudioMixerGroup = sfxMixerGroup;
+        playerLife = GetComponent<Life>();
+        if (playerLife != null) {
+            playerLife.onDeath.AddListener(StopGruntAudio);
+        }
         InitializeSprintBar();
         if (sprintBlurVolume != null) {
             sprintBlurVolume.weight = 0f;
@@ -173,9 +196,15 @@ public class PlayerMovement : MonoBehaviour {
 
     private void OnDisable() {
         isSprinting = false;
+        if (sprintBar != null) {
+            sprintBar.gameObject.SetActive(false);
+        }
         sprintGruntTimer = 0f;
         if (sprintAudioSource != null) {
             sprintAudioSource.Stop();
+        }
+        if (jumpAudioSource != null) {
+            jumpAudioSource.Stop();
         }
         // The Volume may belong to the scene, so clear it before the player is destroyed.
         if (sprintBlurVolume != null) {
@@ -341,6 +370,9 @@ public class PlayerMovement : MonoBehaviour {
         if (jumpHeld && grounded) {
             playerBody.velocity = new Vector3(playerBody.velocity.x, 0f, playerBody.velocity.z);
             playerBody.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+            if (jumpGrunt != null && (playerLife == null || !playerLife.IsDead)) {
+                jumpAudioSource.PlayOneShot(jumpGrunt, jumpGruntVolume);
+            }
         }
         else if (animator.GetBool("isJumping") && playerBody.velocity.y <= 0f && grounded)
         {
@@ -369,7 +401,23 @@ public class PlayerMovement : MonoBehaviour {
         playerBody.MovePosition(position);
     }
 
+    private void StopGruntAudio() {
+        sprintGruntTimer = 0f;
+        sprintAudioSource.Stop();
+        jumpAudioSource.Stop();
+    }
+
+    private void OnDestroy() {
+        if (playerLife != null) {
+            playerLife.onDeath.RemoveListener(StopGruntAudio);
+        }
+    }
+
     private void UpdateSprintAudio() {
+        if (playerLife != null && playerLife.IsDead) {
+            StopGruntAudio();
+            return;
+        }
         bool playGrunts = isSprinting && !isClimbing && stamina > 0f
             && Application.isFocused && Time.timeScale > 0f
             && playerInput != null && playerInput.isActiveAndEnabled;
@@ -413,6 +461,20 @@ public class PlayerMovement : MonoBehaviour {
             }
         } else if (sprintParticles.isEmitting) {
             sprintParticles.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+        }
+    }
+
+    private void LateUpdate() {
+        if (sprintBar == null) {
+            return;
+        }
+
+        // PuzzleActivator pauses time and disables input. Check after Update so
+        // the HUD also hides if a puzzle opens during this frame.
+        bool showSprintBar = Time.timeScale > 0f
+            && playerInput != null && playerInput.isActiveAndEnabled;
+        if (sprintBar.gameObject.activeSelf != showSprintBar) {
+            sprintBar.gameObject.SetActive(showSprintBar);
         }
     }
 

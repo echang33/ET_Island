@@ -44,8 +44,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dabc4f6fa9ca5483caabac849f11d5f3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ladderHeight: 4
-  ladderWidth: 1
+  height: 4
+  width: 1
   rungSpacing: 0.3
   railRadius: 0.05
   rungRadius: 0.035

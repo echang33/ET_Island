@@ -24,6 +24,13 @@ public class Ladder : MonoBehaviour {
     public float CenterX => transform.position.x;
     public float CenterZ => transform.position.z;
 
+    private void Start() {
+        boxCollider = GetComponent<BoxCollider>();
+        if (transform.Find("GeneratedGeometry") == null || boxCollider == null) {
+            GenerateLadder();
+        }
+    }
+
     private void OnTriggerEnter(Collider other) {
         PlayerMovement player = other.GetComponent<PlayerMovement>();
         if (player != null) {
@@ -38,7 +45,12 @@ public class Ladder : MonoBehaviour {
         }
     }
 
+    [ContextMenu("Generate Ladder")]
     public void GenerateLadder() {
+        Transform previousGeometry = transform.Find("GeneratedGeometry");
+        if (previousGeometry != null) {
+            DestroyGenerated(previousGeometry.gameObject);
+        }
         GameObject geometry = new GameObject("GeneratedGeometry");
         geometry.transform.SetParent(transform, false);
 

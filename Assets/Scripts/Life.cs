@@ -28,6 +28,7 @@ public class Life : MonoBehaviour
     public GameObject playerModel;
 
     private bool isDead = false;
+    public bool IsDead => isDead || amount <= 0f;
 
     void Update()
     {
@@ -49,10 +50,16 @@ public class Life : MonoBehaviour
             // Play death sound independently
             if (deathEffect != null && deathEffect.clip != null)
             {
-                AudioSource.PlayClipAtPoint(
-                    deathEffect.clip,
-                    transform.position
-                );
+                GameObject soundObject = new GameObject("Death Sound");
+                soundObject.transform.position = transform.position;
+                AudioSource sound = soundObject.AddComponent<AudioSource>();
+                sound.playOnAwake = false;
+                sound.clip = deathEffect.clip;
+                sound.outputAudioMixerGroup = deathEffect.outputAudioMixerGroup;
+                sound.volume = deathEffect.volume;
+                sound.spatialBlend = 1f;
+                sound.Play();
+                Destroy(soundObject, sound.clip.length);
             }
 
             // Hide player model

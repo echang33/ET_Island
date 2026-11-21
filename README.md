@@ -207,6 +207,24 @@ Muzzle flash demo: https://github.com/user-attachments/assets/e1ef4e41-37aa-485d
 - Post-processing effects were also added. Currently, we just added a bloom filter and vignette effects. The bloom filter makes the central killswitch light look more mysterious since it gives it a glow effect.
 - A motion blur effect was added, it is triggered when sprinting.
 
+
+### Project Checkpoint 3-4: Sound, UI, and Animation
+
+**Sound**
+* Added sounds to sprinting and jumping: [tuna.voicemod.net](https://tuna.voicemod.net/sound/675cf091-8838-47da-b7e7-7b9b5f0ae758)
+* Added laser death sound: [assetstore.unity.com](https://assetstore.unity.com/packages/audio/sound-fx/tii-3-steps-audio-sci-fi-package-384690?srsltid=AYCX9vLTHrt9CVIrqOmnuWBcLEWwZhtRv9ZnV3nxuwqhweCFArYhFb8s)
+* Added background music: [assetstore.unity.com](https://assetstore.unity.com/packages/audio/ambient/sci-fi/sci-fi-ambiances-234344?srsltid=AYCX9vLwfdEZIC4HHNv0vlQl5EukSSHq2hfdQxQT0M5I0qPCk5s41nuJ)
+* Added turret fire sound: [assetstore.unity.com](https://assetstore.unity.com/packages/audio/sound-fx/sci-fi-guns-sfx-pack-181144?srsltid=AYCX9vLqeqxHVHCd6LLOjuHn0LqDgtDPs11lqRHrT3lHu93BPChgsfDP)
+
+
+**UI**
+
+**Procedural Generation**
+
+**General Gameplay**
+* Added drop shadows to players and lasers to make it easier to pass obstacles
+* Ladders: press "E" when near ladder to engage, "W" to climb up
+
 ## Instructions for Testing the Project
 
 - Open the Unity project and load the scene `TestLevel`.
