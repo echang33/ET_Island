@@ -219,12 +219,17 @@ Muzzle flash demo: https://github.com/user-attachments/assets/e1ef4e41-37aa-485d
 
 **UI**
 * Added tutorial panel to the beginning of the run with instructions
+* Added life system for main character that displays number of lives they have left
 * Added a pause menu
+<img width="2064" height="1026" alt="image" src="https://github.com/user-attachments/assets/241aca9e-46df-47f5-abc2-caff8febb43a" />
+<img width="2094" height="1026" alt="Screenshot 2026-11-20 203437" src="https://github.com/user-attachments/assets/64b05a9d-e782-4e7b-bce8-1cc3240bc9c8" />
 
 **Procedural Generation**
 
 **General Gameplay**
 * Added drop shadows to players and lasers to make it easier to pass obstacles
+* Instead of having to restart each time the player dies, they are teleported back to the room they just failed, with a maximum of 3 lives, once all 3 lives are expended they must restart the game
+* Pause Menu allows users to pause the game and restart whenever they choose 
 * Ladders: press "E" when near ladder to engage, "W" to climb up
 
 ## Instructions for Testing the Project
@@ -233,6 +238,7 @@ Muzzle flash demo: https://github.com/user-attachments/assets/e1ef4e41-37aa-485d
 - Press the Play button in the Unity Editor to start the game.
 - Use **WASD** to move the player and **Space** to jump.
 - Hold **Left Shift** to sprint. The green bar represents sprint stamina; stop sprinting for 1 second to  regenerate.
+- Press M to open the pause menu 
 - Avoid laser beams and enemy turrets.
 - Touch or approach the puzzle terminal to activate a puzzle.
 - Enter your answer into the text field and submit it using `[submission control]`.
