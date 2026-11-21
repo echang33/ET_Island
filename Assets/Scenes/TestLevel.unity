@@ -29829,12 +29829,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   spawn: {fileID: 1385896678}
   boundsMin: {x: 0, y: 0, z: 0}
-  boundsMax: {x: 400, y: 320, z: 400}
+  boundsMax: {x: 200, y: 160, z: 200}
   outerRemoveBorder: 0.1
   innerRemoveBorder: 0.25
-  minWidth: 30
+  minWidth: 20
   minHeight: 16
-  minDepth: 30
+  minDepth: 20
   adjacencyEpsilon: 0.001
   minFaceOverlap: 5
   shrinkageBorder: 0
@@ -42455,7 +42455,7 @@ MonoBehaviour:
   restartDelay: 2
   killOnFall: 1
   killHeight: -20
-  useAlternateSpawn: 0
+  useAlternateSpawn: 1
   player: {fileID: 565046422734581846}
   normalSpawn: {fileID: 16920974}
   alternateSpawn: {fileID: 1385896678}

@@ -54,12 +54,18 @@ public class BSPGenerator : MonoBehaviour {
         public Vector3 Max;
         public Material FloorMat;
         public Material WallMat;
+        // Flag indicating if puzzle was solved in this room
+        public bool PuzzleSolved;
+        // Turrets generated in the room
+        public List<EnemyFSM> turrets;
 
         public Region(Vector3 min, Vector3 max) {
             Min = min;
             Max = max;
             FloorMat = new Material(Shader.Find("Standard"));
             WallMat = new Material(Shader.Find("Standard"));
+            PuzzleSolved = false;
+            turrets = new List<EnemyFSM>();
         }
 
         public Vector3 Size => Max - Min;
@@ -81,6 +87,10 @@ public class BSPGenerator : MonoBehaviour {
         public Vector3 OpeningMin;
         public Vector3 OpeningMax;
 
+        // Reference to door for this edge. Set to null if door is
+        // already open (from puzzle being solved).
+        public GameObject Door;
+
         public Edge(int a, int b, int axis, float plane, Vector3 overlapMin, 
                 Vector3 overlapMax, Vector3 openingMin, Vector3 openingMax) {
             RegionA = a;
@@ -91,6 +101,7 @@ public class BSPGenerator : MonoBehaviour {
             OverlapMax = overlapMax;
             OpeningMin = openingMin;
             OpeningMax = openingMax;
+            Door = null;
         }
     }
 
@@ -131,7 +142,7 @@ public class BSPGenerator : MonoBehaviour {
         Vector3 innerMin = boundsMin + (boundsMax - boundsMin) * innerRemoveBorder;
         Vector3 innerMax = boundsMin + (boundsMax - boundsMin) * (1 - innerRemoveBorder);
         RemoveRegionsRing(outerMin, outerMax, innerMin, innerMax);
-        
+
         // Generate rooms forming the labryinth
         GenerateRooms();
 
@@ -450,6 +461,8 @@ public class BSPGenerator : MonoBehaviour {
                 continue;
             }
 
+            // TODO: For each face facing towards central region, with a certain probability generate an opening.
+
             for (int axis = 0; axis < 3; axis++) {
                 DrawRoomFace(i, axis, min[axis] + wallThickness * 0.5f, min, max);
                 DrawRoomFace(i, axis, max[axis] - wallThickness * 0.5f, min, max);
@@ -480,16 +493,17 @@ public class BSPGenerator : MonoBehaviour {
         Material mat = (axis == 1 ? region.FloorMat : region.WallMat);
 
         // Find all edges that connect to this face of this region.
-        List<Edge> faceEdges = new List<Edge>();
+        List<int> faceEdges = new List<int>();
         for (int i = 0; i < adjList[regionIndex].Count; i++) {
-            Edge edge = edges[adjList[regionIndex][i].Item2];
+            int edgeInd = adjList[regionIndex][i].Item2;
+            Edge edge = edges[edgeInd];
             if (edge.Axis != axis) continue;
 
             // The plane is drawn at an inset of shrinkageBorder and half of the wall thickness, whereas
             // the edge plane is the original divider in the BSP. So the difference needs to account for these.
             float diff = shrinkageBorder + wallThickness * 0.5f + adjacencyEpsilon;
             if (ApproximatelyEqual(edge.PlaneCoordinate, plane, diff)) {
-                faceEdges.Add(edge);
+                faceEdges.Add(edgeInd);
             }
         }
 
@@ -500,7 +514,8 @@ public class BSPGenerator : MonoBehaviour {
         }
 
         List<(float uMin, float uMax, float vMin, float vMax)> holes = new List<(float, float, float, float)>();
-        foreach (Edge edge in faceEdges) {
+        foreach (int edgeInd in faceEdges) {
+            Edge edge = edges[edgeInd];
             holes.Add((edge.OpeningMin[u], edge.OpeningMax[u], edge.OpeningMin[v], edge.OpeningMax[v]));
         }
 
@@ -605,6 +620,52 @@ public class BSPGenerator : MonoBehaviour {
             MeshCollider meshCollider = ramp.AddComponent<MeshCollider>();
             meshCollider.sharedMesh = rampMesh.GetComponent<MeshFilter>().sharedMesh;
             meshCollider.material = rampPhysicMaterial;
+        }
+
+        foreach (int edgeInd in faceEdges) {
+            // Generate door for each edge
+            Edge edge = edges[edgeInd];
+            if (edge.Door == null) {
+                GameObject door = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                door.name = "Door";
+                door.transform.SetParent(genRoot, false);
+
+                Vector3 center = Vector3.zero;
+                center[u] = (edge.OpeningMin[u] + edge.OpeningMax[u]) * 0.5f;
+                center[v] = (edge.OpeningMin[v] + edge.OpeningMax[v]) * 0.5f;
+                center[axis] = edge.PlaneCoordinate;
+
+                Vector3 size = Vector3.zero;
+                size[u] = (edge.OpeningMax[u] - edge.OpeningMin[u]);
+                size[v] = (edge.OpeningMax[v] - edge.OpeningMin[v]); 
+                size[axis] = (wallThickness + shrinkageBorder) * 2f;
+
+                door.transform.localPosition = center;
+                door.transform.localRotation = Quaternion.identity;
+                door.transform.localScale = size;
+
+                edge.Door = door;
+                edges[edgeInd] = edge;
+            }
+        }
+    }
+
+    // Called by puzzle activator on success. Opens doors and deactivates turrets.
+    public void RoomCleared(int regionIndex) {
+        // Remove doors
+        Region region = leafRegions[regionIndex];
+        for (int i = 0; i < adjList[regionIndex].Count; i++) {
+            int edgeInd = adjList[regionIndex][i].Item2;
+            Edge edge = edges[edgeInd];
+            if (edge.Door != null) {
+                Destroy(edge.Door);
+                edge.Door = null;
+                edges[edgeInd] = edge;
+            }
+        }
+        // Deactivate all turrets in room
+        foreach (EnemyFSM turret in region.turrets) {
+            turret.Deactivate();
         }
     }
 
