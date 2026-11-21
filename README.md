@@ -25,13 +25,13 @@ Puzzle and Adventure game
 Jailbreak is a popular Roblox open-world cops-and-robbers game where players choose to be criminals or police officers. Criminals escape prison, rob locations like banks and stores, and evade capture, while police try to stop and arrest them. The robbing part is extremely similar to what we are thinking. Often these require a series of tasks to be completed, involving puzzles, and dodging lasers to get to a vault or some objective, where you then have to escape with the money. 
 
 
-![JailBreak](https://entertainment-focus.com/wp-content/uploads/2020/06/Roblox_jailbreak_press_image_2250x1200.jpg)
+<img src="https://entertainment-focus.com/wp-content/uploads/2020/06/Roblox_jailbreak_press_image_2250x1200.jpg" alt="JailBreak" width="500">
 
 ### [Squid Game - Netflix](https://www.roblox.com/games/606849621/Jailbreak)
 
 One of the subplots of the TV show Squid Game was Detective Hwang Jun-ho’s attempts to infiltrate the secret island where games took place. In season one, he successfully does so by sneaking onto a ferry, neutralizing a guard, stealing their outfit, and assuming their identity to blend in. While Jun-ho’s objectives were different, we took inspiration from the tension of infiltrating a secure island facility and hiding in plain sight. Rather than wearing a physical disguise to blend in, our protagonist must disguise their human-ness by solving timed math and logic puzzles at security checkpoints. At the end of season 3, Jun-ho destroys the island, just as our protagonist will aim to take down the data center island.
 
-![Jun-ho](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSg6klfg3Dgfnabe6uLqHyHLUEgLqcZndJyykhFeQHYuiX2CKPuK05Sfqw&s=10)
+<img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSg6klfg3Dgfnabe6uLqHyHLUEgLqcZndJyykhFeQHYuiX2CKPuK05Sfqw&amp;s=10" alt="Jun-ho" width="500">
 
 ### [Current Events](https://www.datacenterdynamics.com/en/news/terrorism-elon-musk-xai-memphis-data-center/)
 
@@ -101,6 +101,11 @@ Regarding procedural generation, we will add doors between the holes connecting 
 
 There are also some difficulties in procedural generation. Currently, there is no guarantee that generated slopes do not collide with each other, or that the generated slopes don't block other openings. As we procedurally generate more and more objects into each room, this will only become more difficult. We will spend some time researching approaches to get around this.
 
+### Project Part 4
+For the last part of the project, we plan to integrate the tutorial room and the procedurally generated room.
+
+Also want to have a tutorial on how to solve clique problems
+
 ## Development
 
 ### Project Checkpoint 1-2:
@@ -111,17 +116,17 @@ There are also some difficulties in procedural generation. Currently, there is n
 * Puzzle system: We implemented a puzzle UI that appears when the player gets near a puzzle location in the 3D environment (currently it is a green cube at the end of the test level). The puzzle UI pauses the 3D gameplay, and prompts the user with a puzzle and textbox waiting for the user's answer.
 * Graph puzzle: We implemented a graph generation and display system for graph-based puzzles. Graphs are randomly generated with a configurable number of vertices and edge density and displayed in the puzzle UI. Currently the puzzle asks the user to find a maximum clique. Once the user enters their answer, it is parsed and programmatically checked. If the user enters the wrong answer, it kills the player. If the user answers correctly, they exit the puzzle screen (but nothing more happens for now).
 
-![Test Level](./Screenshots/TestLevel.png)
-![Death Popup](./Screenshots/TestDeathScene.png)
-![Turret](./Screenshots/Turret.png)
-![GraphPuzzle](./Screenshots/game_clique_puzzle.png)
+<img src="./Screenshots/TestLevel.png" alt="Test Level" width="500">
+<img src="./Screenshots/TestDeathScene.png" alt="Death Popup" width="500">
+<img src="./Screenshots/Turret.png" alt="Turret" width="500">
+<img src="./Screenshots/game_clique_puzzle.png" alt="GraphPuzzle" width="500">
 
 ### Project Part 2: 3D Scenes and Models 
 
 Two more puzzle types were added, one for finding the Hamiltonian path in a graph and another for finding the minimum vertex cover. For the Hamiltonian path puzzle, the graph is guaranteed to be generated with at least one Hamiltonian path. There is a 1/3 probability for each of the 3 puzzle types appearing when activated. See the screenshots below for the new puzzle type prompts:
 
-![Ham Path](./Screenshots/hamiltonian_path.png)
-![Vertex Cover](./Screenshots/min_vertex_cover.png)
+<img src="./Screenshots/hamiltonian_path.png" alt="Ham Path" width="500">
+<img src="./Screenshots/min_vertex_cover.png" alt="Vertex Cover" width="500">
 
 Free assets were also incorporated, found from the Unity asset store. There is now a 3D model for our main character, which is a miniature person with glasses. Additionally, there are 3D models for the enemy turrets, puzzle activator (stand with a screen), and also general server room props (to make it look more like a data center). The links to these assets are below:
 
@@ -140,7 +145,8 @@ Main character Chi Poh Le model
 Environment
 
 A screenshot of the level:
-![Datacenter Level](./Screenshots/datacenter.png)
+
+<img src="./Screenshots/datacenter.png" alt="Datacenter Level" width="500">
 
 AI was implemented for the enemy turrets. It uses a FSM design as described in the textbook, switching between Idle and AttackPlayer based on if it is within range. Once in range, it directly turns to the player and fires bullets. 
 
@@ -158,8 +164,8 @@ Finally, the rooms are actually created via 3D cube primitives in Unity. This pr
 
 There are many configurable parameters going into the generation algorithm described above: overall volume dimensions, minimum region dimensions, minimum face overlap, door size, wall thickness, shrinkage border, removal percentage. There will likely need to be even more added in the future as we make it traversable, and also add textures and assets into each room. Here's what the labryinth looks like right now:
 
-![labyrinth outside](./Screenshots/labryinth_outside.png)
-![labyrinth inside](./Screenshots/labryinth_inside.png)
+<img src="./Screenshots/labryinth_outside.png" alt="labyrinth outside" width="500">
+<img src="./Screenshots/labryinth_inside.png" alt="labyrinth inside" width="500">
 
 ### Project Part 3: Visual Effects
 
@@ -168,15 +174,15 @@ There are many configurable parameters going into the generation algorithm descr
 - Parkour was added in the training room. The player must perform parkour in order to evade the turrets.
 - Laser obstacles now move up/down or left/right. Configurable in the inspector. 
 
-![spawn toggle](./Screenshots/alternate_spawn.png)
-![parkour](./Screenshots/parkour.png)
+<img src="./Screenshots/alternate_spawn.png" alt="spawn toggle" width="500">
+<img src="./Screenshots/parkour.png" alt="parkour" width="500">
 
 **Player Movement:** 
 - A "sprint" mechanism was added. The player acivates sprinting by holding down left shift. There is a 5 second "stamina" bar for sprinting, which begins regeneration once the player has stopped sprinting for 1 second.
 - The 3rd person camera was overhauled to use Unity's Cinemachine package, which provides much more fluid camera tracking. It also has support for preventing the camera from clipping through walls, which is nice.
 - The player is now able to jump while on slopes as well, allowing navigation through the procedurally generated rooms.
 
-![sprint](./Screenshots/sprint.png)
+<img src="./Screenshots/sprint.png" alt="sprint" width="500">
 
 **Visual Effects**
 - Walking and sprinting animations were added to Chi Poh Le. 
@@ -186,8 +192,8 @@ There are many configurable parameters going into the generation algorithm descr
 - Added a death particle effect
 - Added lighting effects in hallway
 
-![laser sparkle](./Screenshots/laser_sparkle.png)
-![lighting](./Screenshots/lighting.png)
+<img src="./Screenshots/laser_sparkle.png" alt="laser sparkle" width="500">
+<img src="./Screenshots/lighting.png" alt="lighting" width="500">
 
 
 Muzzle flash demo: https://github.com/user-attachments/assets/e1ef4e41-37aa-485d-88e6-a7f49b30ab83
@@ -200,8 +206,8 @@ Muzzle flash demo: https://github.com/user-attachments/assets/e1ef4e41-37aa-485d
 - Added support for having multiple wall / floor materials, which are picked randomly for each room. Currently, we just made 3 metallic materials of differing colors. In the future, we will find better wall materials for this.
 - Spotlights are also now procedurally generated at the top of each room.
 
-![central room](./Screenshots/central_room.png)
-![slopes](./Screenshots/procedural_slopes.png)
+<img src="./Screenshots/central_room.png" alt="central room" width="500">
+<img src="./Screenshots/procedural_slopes.png" alt="slopes" width="500">
 
 **Post-processing Effects**
 - Post-processing effects were also added. Currently, we just added a bloom filter and vignette effects. The bloom filter makes the central killswitch light look more mysterious since it gives it a glow effect.
@@ -219,13 +225,26 @@ Muzzle flash demo: https://github.com/user-attachments/assets/e1ef4e41-37aa-485d
 
 **UI**
 * Added tutorial panel to the beginning of the run with instructions
-* Added a pause menu
+* Added a pause menu with "Resume," "Restart," "Controls," and "Quit." Controls brings up a screen to remind players of how to play the game.
+* Added a player icon and three hearts representing the three lives of the player. 
+
+<img src="./Screenshots/Tutorial.png" alt="tutorial" width="500">
+<img src="./Screenshots/PauseMenu.png" alt="pausemenu" width="500">
+<img src="./Screenshots/Controls.png" alt="controls" width="500">
+<img src="./Screenshots/Lives.png" alt="lives" width="500">
+
 
 **Procedural Generation**
 
 **General Gameplay**
 * Added drop shadows to players and lasers to make it easier to pass obstacles
 * Ladders: press "E" when near ladder to engage, "W" to climb up
+* Player gets 3 lives, after that the game ends and player has to restart.
+
+<img src="./Screenshots/Ladder.png" alt="ladder" width="500">
+
+
+
 
 ## Instructions for Testing the Project
 

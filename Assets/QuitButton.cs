@@ -1,8 +1,7 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+[RequireComponent(typeof(Button))]
 public class QuitButton : MonoBehaviour
 {
 
@@ -16,8 +15,17 @@ public class QuitButton : MonoBehaviour
 
     void Quit()
     {
-        print("Quitting");
+        // A built game exits; the Editor stops the current Play session.
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
         Application.Quit();
+#endif
+    }
+
+    private void OnDestroy()
+    {
+        if (button != null) button.onClick.RemoveListener(Quit);
     }
 
 }

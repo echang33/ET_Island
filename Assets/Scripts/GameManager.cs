@@ -6,6 +6,10 @@
 
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
+using UnityEngine.Serialization;
+using UnityEngine.UI;
 using TMPro;
 
 public class GameManager : MonoBehaviour
@@ -28,9 +32,13 @@ public class GameManager : MonoBehaviour
     public Transform alternateSpawn;
     public bool useAlternateSpawn;
 
+    [Header("Death UI")]
+    [FormerlySerializedAs("gameOverText")]
+    public TextMeshProUGUI deathText;
+
     [Header("Game Over")]
-    public TextMeshProUGUI gameOverText;
-    public float restartDelay = 2f;
+    public GameObject gameOverPanel;
+    public Button gameOverRestartButton;
 
     [Header("Fall Detection")]
     public bool killOnFall = true;
@@ -62,28 +70,33 @@ public class GameManager : MonoBehaviour
 
         lives = maxLives;
         startingHealth = playerLife.amount;
+        // Existing scenes can leave this list empty; still freeze player controls on death.
+        if (controlScripts == null || controlScripts.Length == 0)
+        {
+            controlScripts = new MonoBehaviour[] {
+                player.GetComponent<PlayerMovement>(), player.GetComponent<PlayerInput>()
+            };
+        }
         originalControlStates = new bool[controlScripts.Length];
         MoveToSpawn();
         playerLife.onDeath.AddListener(HandleDeath);
-        if (gameOverText != null)
-            gameOverText.gameObject.SetActive(false);
+        if (deathText != null) deathText.gameObject.SetActive(false);
+        if (gameOverPanel != null) gameOverPanel.SetActive(false);
+        if (gameOverRestartButton != null)
+            gameOverRestartButton.onClick.AddListener(RestartGame);
     }
 
     void Update()
     {
+        if (Time.timeScale <= 0f) return;
         if (state == State.Respawning &&
             Time.time >= nextActionTime)
         {
             MoveToSpawn();
+            if (deathText != null) deathText.gameObject.SetActive(false);
             playerLife.Revive(startingHealth);
             SetControls(true);
             state = State.Playing;
-        }
-        else if (state == State.GameOver &&
-                 Time.time >= nextActionTime)
-        {
-            SceneManager.LoadScene(
-                SceneManager.GetActiveScene().name);
         }
         else if (state == State.Playing &&
                  killOnFall && player != null &&
@@ -103,18 +116,43 @@ public class GameManager : MonoBehaviour
         if (lives > 0)
         {
             state = State.Respawning;
+            if (deathText != null) deathText.gameObject.SetActive(true);
             nextActionTime = Time.time + respawnDelay;
         }
         else
         {
             state = State.GameOver;
-            nextActionTime = Time.time + restartDelay;
-
-            if (Camera.main != null)
-                Camera.main.transform.SetParent(null);
-            if (gameOverText != null)
-                gameOverText.gameObject.SetActive(true);
+            if (deathText != null) deathText.gameObject.SetActive(false);
+            if (gameOverPanel != null)
+            {
+                gameOverPanel.transform.SetAsLastSibling();
+                gameOverPanel.SetActive(true);
+            }
+            Time.timeScale = 0f;
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+            if (gameOverRestartButton != null && EventSystem.current != null)
+                EventSystem.current.SetSelectedGameObject(gameOverRestartButton.gameObject);
         }
+    }
+
+    public void RestartGame()
+    {
+        Time.timeScale = 1f;
+        AudioListener.pause = false;
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+        Scene scene = SceneManager.GetActiveScene();
+#if UNITY_EDITOR
+        // TestLevel can be played in the Editor without being in Build Settings.
+        if (scene.buildIndex < 0)
+        {
+            UnityEditor.SceneManagement.EditorSceneManager.LoadSceneInPlayMode(
+                scene.path, new LoadSceneParameters(LoadSceneMode.Single));
+            return;
+        }
+#endif
+        SceneManager.LoadScene(scene.path);
     }
 
     private void SetControls(bool enable)
@@ -179,5 +217,7 @@ public class GameManager : MonoBehaviour
     {
         if (playerLife != null)
             playerLife.onDeath.RemoveListener(HandleDeath);
+        if (gameOverRestartButton != null)
+            gameOverRestartButton.onClick.RemoveListener(RestartGame);
     }
 }

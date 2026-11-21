@@ -1,9 +1,7 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.SceneManagement;
 
+[RequireComponent(typeof(Button))]
 public class RestartButton : MonoBehaviour
 {
     Button button;
@@ -16,8 +14,12 @@ public class RestartButton : MonoBehaviour
 
     void Restart()
     {
-        print("Restarting Game");
-        Time.timeScale = 1f;
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        GameManager manager = FindFirstObjectByType<GameManager>();
+        if (manager != null) manager.RestartGame();
+    }
+
+    private void OnDestroy()
+    {
+        if (button != null) button.onClick.RemoveListener(Restart);
     }
 }
