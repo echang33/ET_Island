@@ -218,6 +218,8 @@ Muzzle flash demo: https://github.com/user-attachments/assets/e1ef4e41-37aa-485d
 
 
 **UI**
+* Added tutorial panel to the beginning of the run with instructions
+* Added a pause menu
 
 **Procedural Generation**
 

@@ -48,6 +48,7 @@ public class PlayerMovement : MonoBehaviour {
 
     private AudioSource sprintAudioSource;
     private float sprintGruntTimer;
+    private float sprintGruntResumeTime;
 
     [Header("Jump Audio")]
     public AudioClip jumpGrunt;
@@ -55,6 +56,17 @@ public class PlayerMovement : MonoBehaviour {
 
     private AudioSource jumpAudioSource;
     private Life playerLife;
+    private LadderPromptUI ladderPrompt;
+
+    public bool CanShowLadderPrompt => isActiveAndEnabled && curLadder != null
+        && !isClimbing && Time.timeScale > 0f && Application.isFocused
+        && playerInput != null && playerInput.isActiveAndEnabled
+        && (playerLife == null || !playerLife.IsDead);
+
+    [ContextMenu("Reset Ladder Prompt")]
+    private void ResetLadderPrompt() {
+        LadderPromptUI.ResetSavedPreference();
+    }
 
     [Header("Sprint Motion Blur")]
     [Tooltip("Optional dedicated sprint blur Volume. Assign the object from the scene Hierarchy, not a prefab asset.")]
@@ -134,6 +146,8 @@ public class PlayerMovement : MonoBehaviour {
         if (playerLife != null) {
             playerLife.onDeath.AddListener(StopGruntAudio);
         }
+        ladderPrompt = gameObject.AddComponent<LadderPromptUI>();
+        ladderPrompt.Initialize(this);
         InitializeSprintBar();
         if (sprintBlurVolume != null) {
             sprintBlurVolume.weight = 0f;
@@ -152,6 +166,7 @@ public class PlayerMovement : MonoBehaviour {
         if (isClimbing) {
             StopClimbing();
         } else if (curLadder != null) {
+            ladderPrompt.Acknowledge();
             StartClimbing();
         }
     }
@@ -371,7 +386,13 @@ public class PlayerMovement : MonoBehaviour {
             playerBody.velocity = new Vector3(playerBody.velocity.x, 0f, playerBody.velocity.z);
             playerBody.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
             if (jumpGrunt != null && (playerLife == null || !playerLife.IsDead)) {
+                // Jump vocals take priority; never layer two player grunts.
+                sprintAudioSource.Stop();
+                jumpAudioSource.Stop();
                 jumpAudioSource.PlayOneShot(jumpGrunt, jumpGruntVolume);
+                sprintGruntTimer = 0f;
+                sprintGruntResumeTime = Time.time + jumpGrunt.length
+                    + Mathf.Max(0.01f, sprintGruntInterval);
             }
         }
         else if (animator.GetBool("isJumping") && playerBody.velocity.y <= 0f && grounded)
@@ -403,6 +424,7 @@ public class PlayerMovement : MonoBehaviour {
 
     private void StopGruntAudio() {
         sprintGruntTimer = 0f;
+        sprintGruntResumeTime = 0f;
         sprintAudioSource.Stop();
         jumpAudioSource.Stop();
     }
@@ -423,6 +445,12 @@ public class PlayerMovement : MonoBehaviour {
             && playerInput != null && playerInput.isActiveAndEnabled;
         if (!playGrunts || sprintGrunt == null) {
             sprintGruntTimer = 0f;
+            sprintAudioSource.Stop();
+            return;
+        }
+
+        // Keep the gap even if sprint is released and pressed again mid-jump.
+        if (jumpAudioSource.isPlaying || Time.time < sprintGruntResumeTime) {
             sprintAudioSource.Stop();
             return;
         }
